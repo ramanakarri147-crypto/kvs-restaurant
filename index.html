@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="te">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KVS Restaurant - Menu</title>
+    <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { margin: 0; background: #0f0f0f; color: white; font-family: 'Poppins', sans-serif; padding-bottom: 150px; }
+        #welcome-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f0f0f; display: flex; align-items: center; justify-content: center; z-index: 9999; }
+        .welcome-card { background: #1a1a1a; padding: 30px; border-radius: 20px; border: 2px solid #FFD700; text-align: center; width: 85%; max-width: 350px; }
+        .name-input { width: 90%; padding: 12px; margin: 20px 0; border-radius: 10px; border: 1px solid #FFD700; background: #333; color: white; text-align: center; font-size: 16px; outline: none; }
+        .header { text-align: center; background: #1a1a1a; padding: 15px 10px; border-bottom: 2px solid #FFD700; position: sticky; top: 0; z-index: 1001; }
+        .hotel-name { font-family: 'Righteous', cursive; font-size: 24px; color: #FFD700; }
+        .search-box { width: 90%; padding: 8px 15px; border-radius: 20px; border: none; background: #333; color: white; margin-top:10px; }
+        .tabs-container { display: flex; overflow-x: auto; gap: 10px; padding: 12px; background: #111; position: sticky; top: 105px; z-index: 1000; border-bottom: 1px solid #333; scrollbar-width: none; }
+        .tab-link { background: #222; color: #FFD700; border: 1px solid #FFD700; padding: 6px 15px; border-radius: 20px; text-decoration: none; font-size: 11px; font-weight: bold; white-space: nowrap; }
+        .category-group { margin: 15px; background: #161616; border-radius: 12px; border: 1px solid #222; overflow: hidden; scroll-margin-top: 170px; }
+        .category-header { background: #FFD700; color: #000; padding: 10px; font-weight: bold; font-size: 14px; text-transform: uppercase; }
+        .menu-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #222; align-items: center; }
+        .food-info b { display: block; font-size: 15px; }
+        .food-info span { color: #FFD700; font-weight: bold; }
+        .add-btn { background: #FFD700; color: #000; border: none; padding: 6px 18px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .qty-box { display: flex; align-items: center; gap: 12px; background: #333; padding: 5px 10px; border-radius: 5px; border: 1px solid #FFD700; }
+        .qty-btn { background: none; border: none; color: #FFD700; font-size: 18px; font-weight: bold; cursor: pointer; }
+        .cart-wrapper { position: fixed; bottom: 0; left: 0; right: 0; z-index: 2000; }
+        #review-list { background: #1a1a1a; padding: 10px; border-top: 1px solid #333; max-height: 150px; overflow-y: auto; display: none; }
+        .review-item { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 10px; color: #bbb; }
+        .cart-bar { background: #25d366; color: white; padding: 10px 20px; display: none; justify-content: space-between; align-items: center; border-radius: 20px 20px 0 0; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 10000; }
+        .card { background: white; color: black; padding: 20px; border-radius: 15px; width: 85%; max-width: 350px; text-align: center; }
+        .finish-btn { background: #25D366; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; margin-top: 15px; cursor: pointer; font-size: 16px; }
+        /* Back Button Styling */
+        #adminBack { position: absolute; left: 15px; top: 20px; color: #FFD700; text-decoration: none; font-size: 24px; font-weight: bold; display: none; z-index: 1002; }
+    </style>
+</head>
+<body>
+
+<div id="welcome-screen">
+    <div class="welcome-card">
+        <h2 style="color: #FFD700; margin: 0;">KVS RESTAURANT</h2>
+        <input type="text" id="custName" class="name-input" placeholder="మీ పేరు ఇవ్వండి...">
+        <button onclick="startApp()" class="finish-btn" style="background:#FFD700; color:black;">ENTER MENU</button>
+    </div>
+</div>
+
+<div id="main-menu" style="display:none;">
+    <div class="header">
+        <a id="adminBack" href="javascript:history.back()">&#8592;</a>
+        <div class="hotel-name">KVS RESTAURANT</div>
+        <input type="text" id="search" class="search-box" placeholder="Search for food..." onkeyup="searchFood()">
+    </div>
+    <div class="tabs-container" id="sector-tabs"></div>
+    <div id="food-list"></div>
+    
+    <div class="cart-wrapper">
+        <div id="review-list"></div>
+        <div id="cartBar" class="cart-bar">
+            <span id="total-val" style="font-weight: bold;">0 Items | ₹0</span>
+            <button onclick="showReceipt()" style="background:white; color:#25d366; border:none; padding:10px 18px; border-radius:10px; font-weight:bold;">PLACE ORDER</button>
+        </div>
+    </div>
+</div>
+
+<div id="main-modal" class="modal">
+    <div class="card" id="modal-content"></div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDYOgbu7yfwlSps_-32frEedWss1qmRQoM", 
+    authDomain: "kvs-project-c60d8.firebaseapp.com",
+    projectId: "kvs-project-c60d8",
+    storageBucket: "kvs-project-c60d8.appspot.com",
+    messagingSenderId: "905673301986",
+    appId: "1:905673301986:web:aad1477b1098d7cbf66380",
+    measurementId: "G-RX864HXH0J"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  let cart = {};
+  let customerName = "";
+  const sectors = [
+      { id: 'vegBiryani', name: 'Veg Biryani' }, { id: 'nonVegBiryani', name: 'Non-Veg Biryani' },
+      { id: 'vegFriedRice', name: 'Veg Fried Rice' }, { id: 'nonVegFriedRice', name: 'Non-Veg Fried Rice' },
+      { id: 'starters', name: 'Starters' }, { id: 'iceCreams', name: 'Ice Creams' },
+      { id: 'coolDrinks', name: 'Cool Drinks' }, { id: 'waterBottle', name: 'Water Bottle' }
+  ];
+
+  // Logic to show Back button only for Admin
+  window.addEventListener('load', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('admin') === 'true') {
+          document.getElementById('adminBack').style.display = 'block';
+      }
+  });
+
+  function startApp() {
+      customerName = document.getElementById('custName').value.trim();
+      if (customerName.length < 2) return alert("దయచేసి మీ పేరు ఇవ్వండి!");
+      document.getElementById('welcome-screen').style.display = 'none';
+      document.getElementById('main-menu').style.display = 'block';
+      renderUI();
+  }
+
+  function renderUI() {
+      const menuData = JSON.parse(localStorage.getItem('kvs_final_database')) || [];
+      let tabHtml = "";
+      sectors.forEach(s => tabHtml += `<a href="#${s.id}" class="tab-link">${s.name}</a>`);
+      document.getElementById('sector-tabs').innerHTML = tabHtml;
+
+      let menuHtml = "";
+      sectors.forEach(s => {
+          const items = menuData.filter(item => item.cat === s.id);
+          if(items.length > 0) {
+              menuHtml += `<div class="category-group" id="${s.id}"><div class="category-header">${s.name}</div>`;
+              items.forEach(item => {
+                  let cleanId = item.id || (item.name + item.price).replace(/\s/g, ''); 
+                  menuHtml += `<div class="menu-item"><div class="food-info"><b>${item.name}</b><span>₹${item.price}</span></div><div id="btn-${cleanId}"><button class="add-btn" onclick="addToCart('${cleanId}','${item.name}',${item.price})">ADD</button></div></div>`;
+              });
+              menuHtml += `</div>`;
+          }
+      });
+      document.getElementById('food-list').innerHTML = menuHtml || "<p style='text-align:center; padding:20px;'>మెనూ ఖాళీగా ఉంది.</p>";
+      updateCart();
+  }
+
+  function addToCart(id, name, price) {
+      if (!cart[name]) cart[name] = { id, price, qty: 1 };
+      else cart[name].qty++;
+      updateCart();
+  }
+
+  function changeQty(name, delta) {
+      cart[name].qty += delta;
+      if (cart[name].qty <= 0) { 
+          delete cart[name]; 
+          renderUI(); 
+      }
+      updateCart();
+  }
+
+  function updateCart() {
+      let count = 0, total = 0, reviewHtml = "";
+      for (let name in cart) {
+          count += cart[name].qty;
+          total += cart[name].price * cart[name].qty;
+          reviewHtml += `<div class="review-item"><span>${name} x ${cart[name].qty}</span><span>₹${cart[name].price * cart[name].qty}</span></div>`;
+          
+          const btnArea = document.getElementById(`btn-${cart[name].id}`);
+          if(btnArea) { 
+              btnArea.innerHTML = `<div class="qty-box"><button class="qty-btn" onclick="changeQty('${name}', -1)">-</button><span>${cart[name].qty}</span><button class="qty-btn" onclick="changeQty('${name}', 1)">+</button></div>`; 
+          }
+      }
+      
+      const cartBar = document.getElementById('cartBar');
+      const reviewList = document.getElementById('review-list');
+      
+      if(count > 0) {
+          cartBar.style.display = 'flex';
+          reviewList.style.display = 'block';
+          reviewList.innerHTML = `<div style="font-size:10px; color:#FFD700; padding-left:10px;">Selected Items:</div>` + reviewHtml;
+      } else {
+          cartBar.style.display = 'none';
+          reviewList.style.display = 'none';
+      }
+      
+      document.getElementById('total-val').innerText = `${count} Items | ₹${total}`;
+  }
+
+  function showReceipt() {
+      let html = `<h3 style="color:black; margin-top:0;">Order Bill</h3><div style="text-align:left; margin:15px 0; color:black;">`;
+      let total = 0;
+      for (let name in cart) {
+          let itemTotal = cart[name].price * cart[name].qty;
+          total += itemTotal;
+          html += `<div style="display:flex; justify-content:space-between; border-bottom:1px dashed #ccc; padding:8px 0; font-size:14px;"><span>${name} x ${cart[name].qty}</span><span>₹${itemTotal}</span></div>`;
+      }
+      html += `</div><h3 style="color:black; text-align:right;">Total: ₹${total}</h3>`;
+      html += `<button class="finish-btn" onclick="submitFinal()">CONFIRM ORDER</button>`;
+      html += `<button onclick="document.getElementById('main-modal').style.display='none'" style="background:none; border:none; color:gray; margin-top:10px; cursor:pointer;">Cancel</button>`;
+      
+      document.getElementById('modal-content').innerHTML = html;
+      document.getElementById('main-modal').style.display = 'flex';
+  }
+
+  async function submitFinal() {
+      let itemsSummary = [];
+      let totalVal = 0;
+      for (let name in cart) {
+          totalVal += cart[name].price * cart[name].qty;
+          itemsSummary.push(`${name} (${cart[name].qty})`);
+      }
+      const urlParams = new URLSearchParams(window.location.search);
+      let tableNum = urlParams.get('table') || "Counter";
+      const orderData = {
+          customer: customerName || "Guest",
+          table: tableNum,
+          items: itemsSummary.join(", "),
+          total: totalVal,
+          status: "Pending",
+          time: new Date().toLocaleString('en-IN')
+      };
+      try {
+          await addDoc(collection(db, "orders"), orderData);
+          alert("Order Done! మీ ఆర్డర్ విజయవంతంగా పంపబడింది.");
+          cart = {}; 
+          document.getElementById('main-modal').style.display = 'none';
+          renderUI(); 
+      } catch (e) {
+          alert("క్షమించండి, ఆర్డర్ పంపడంలో సమస్య వచ్చింది.");
+      }
+  }
+
+  function searchFood() {
+      let query = document.getElementById('search').value.toLowerCase();
+      let groups = document.getElementsByClassName('category-group');
+      for (let g of groups) { g.style.display = g.innerText.toLowerCase().includes(query) ? "block" : "none"; }
+  }
+
+  window.startApp = startApp;
+  window.renderUI = renderUI;
+  window.addToCart = addToCart;
+  window.changeQty = changeQty;
+  window.updateCart = updateCart;
+  window.showReceipt = showReceipt;
+  window.submitFinal = submitFinal;
+  window.searchFood = searchFood;
+</script>
+</body>
+</html>

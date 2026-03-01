@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="te">
+<head>
+    <meta charset="UTF-8">
+    <title>KVS Admin Panel - Full Stable Version</title>
+    <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Poppins:wght@300;500&display=swap" rel="stylesheet">
+    <style>
+        html { scroll-behavior: smooth; }
+        body { margin: 0; background: #1a1a1a; color: white; font-family: 'Poppins', sans-serif; padding: 20px; }
+        .header { text-align: center; border-bottom: 2px solid #FFD700; padding-bottom: 20px; margin-bottom: 10px; }
+        .hotel-name { font-family: 'Righteous', cursive; font-size: 35px; color: #FFD700; text-transform: uppercase; }
+
+        .tabs-sector {
+            display: flex; overflow-x: auto; gap: 10px; padding: 15px 0;
+            position: sticky; top: 0; background: #1a1a1a; z-index: 1000;
+            scrollbar-width: none; border-bottom: 1px solid #333; margin-bottom: 20px;
+        }
+        .sector-btn {
+            background: transparent; color: #FFD700; border: 1px solid #FFD700;
+            padding: 8px 15px; border-radius: 20px; white-space: nowrap;
+            cursor: pointer; text-decoration: none; font-size: 13px; font-weight: bold;
+        }
+
+        .container { display: flex; gap: 20px; align-items: flex-start; }
+        .left-box { flex: 1; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; border: 1.5px solid #444; position: sticky; top: 80px; }
+        .right-box { flex: 2; display: flex; flex-direction: column; gap: 20px; }
+        
+        .category-card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; border-left: 5px solid #FFD700; scroll-margin-top: 100px; }
+        h3 { color: #FFD700; margin-top: 0; }
+        
+        input, select { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #555; background: #333; color: white; box-sizing: border-box; }
+        
+        .update-btn { background: #FFD700; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; color: #000; font-size: 16px; margin-bottom: 10px; }
+        .view-btn { background: #25D366; color: white; text-decoration: none; display: block; text-align: center; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 16px; }
+        
+        table { width: 100%; border-collapse: collapse; }
+        td { padding: 12px; border-bottom: 1px solid #333; font-size: 15px; }
+        .del-btn { background: #ff4444; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; float: right; font-weight: bold; }
+
+        #owner-orders-section {
+            margin-top: 30px; padding: 20px; background: #111; 
+            border: 2px solid #25D366; border-radius: 15px;
+        }
+        .live-order-card {
+            background: #222; padding: 15px; margin-bottom: 10px; 
+            border-radius: 8px; border-left: 5px solid #25D366; 
+            position: relative; animation: slideIn 0.3s ease-out;
+        }
+        .table-badge {
+            background: #25D366; color: black; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; margin-left: 10px;
+        }
+        .order-time {
+            display: block; color: #888; font-size: 11px; margin-top: 8px; font-weight: bold; border-top: 1px solid #333; padding-top: 5px;
+        }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="hotel-name">KVS RESTAURANT - ADMIN PANEL</div>
+</div>
+
+<div class="tabs-sector">
+    <a href="#vegBiryani" class="sector-btn">Veg Biryani</a>
+    <a href="#nonVegBiryani" class="sector-btn">Non-Veg Biryani</a>
+    <a href="#vegFriedRice" class="sector-btn">Veg Fried Rice</a>
+    <a href="#nonVegFriedRice" class="sector-btn">Non-Veg Fried Rice</a>
+    <a href="#starters" class="sector-btn">Starters</a>
+    <a href="#iceCreams" class="sector-btn">Ice Creams</a>
+    <a href="#coolDrinks" class="sector-btn">Cool Drinks</a>
+    <a href="#waterBottle" class="sector-btn">Water Bottle</a> 
+</div>
+
+<div class="container">
+    <div class="left-box">
+        <h3>Add Food Item</h3>
+        <input type="text" id="itemName" placeholder="Item Name">
+        <input type="number" id="itemPrice" placeholder="Price">
+        <select id="category">
+            <option value="vegBiryani">Veg Biryani</option>
+            <option value="nonVegBiryani">Non-Veg Biryani</option>
+            <option value="vegFriedRice">Veg Fried Rice</option>
+            <option value="nonVegFriedRice">Non-Veg Fried Rice</option>
+            <option value="starters">Starters</option>
+            <option value="iceCreams">Ice Creams</option>
+            <option value="coolDrinks">Cool Drinks</option>
+            <option value="waterBottle">Water Bottle</option> 
+        </select>
+        
+        <button class="update-btn" onclick="updateRightSide()">UPDATE CUSTOMER MENU</button>
+        <a href="index.html" class="view-btn" target="_blank">VIEW CUSTOMER MENU</a>
+
+        <div id="owner-orders-section">
+            <h3 style="color: #25D366; text-align: center;">📥 LIVE ORDERS</h3>
+            <div id="order-display-list">
+                <p style="text-align: center; color: #888; font-size: 12px;">ఆర్డర్ల కోసం చూస్తున్నాం...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="right-box" id="menuDataArea">
+        <div class="category-card" id="vegBiryani"><h3>Veg Biryani</h3><table id="vegBiryaniTable"></table></div>
+        <div class="category-card" id="nonVegBiryani"><h3>Non-Veg Biryani</h3><table id="nonVegBiryaniTable"></table></div>
+        <div class="category-card" id="vegFriedRice"><h3>Veg Fried Rice</h3><table id="vegFriedRiceTable"></table></div>
+        <div class="category-card" id="nonVegFriedRice"><h3>Non-Veg Fried Rice</h3><table id="nonVegFriedRiceTable"></table></div>
+        <div class="category-card" id="starters"><h3>Starters</h3><table id="startersTable"></table></div>
+        <div class="category-card" id="iceCreams"><h3>Ice Creams</h3><table id="iceCreamsTable"></table></div>
+        <div class="category-card" id="coolDrinks"><h3>Cool Drinks</h3><table id="coolDrinksTable"></table></div>
+        <div class="category-card" id="waterBottle"><h3>Water Bottle</h3><table id="waterBottleTable"></table></div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDYOgbu7yfwlSps_-32frEedWss1qmRQoM", 
+        authDomain: "kvs-project-c60d8.firebaseapp.com",
+        projectId: "kvs-project-c60d8",
+        storageBucket: "kvs-project-c60d8.appspot.com",
+        messagingSenderId: "905673301986",
+        appId: "1:905673301986:web:aad1477b1098d7cbf66380"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // LIVE ORDERS LISTENER
+    onSnapshot(collection(db, "orders"), (snapshot) => {
+        const orderList = document.getElementById('order-display-list');
+        let html = "";
+        
+        if (snapshot.empty) {
+            orderList.innerHTML = '<p style="text-align: center; color: #888; font-size: 12px;">కొత్త ఆర్డర్లు లేవు.</p>';
+            return;
+        }
+
+        snapshot.forEach((orderDoc) => {
+            const ord = orderDoc.data();
+            const id = orderDoc.id;
+            let tableBadge = `<span class="table-badge">Table: ${ord.table || 'Counter'}</span>`;
+
+            html += `
+                <div class="live-order-card">
+                    <button onclick="window.clearLiveOrder('${id}')" style="float:right; background:#ff4444; border:none; color:white; border-radius:4px; cursor:pointer; padding: 4px 8px; font-weight:bold;">CLEAR</button>
+                    <b style="color: #FFD700;">Customer: ${ord.customer || 'Guest'}</b> ${tableBadge} <br>
+                    <div style="margin: 8px 0; font-size:13px; color:#eee; border-left: 2px solid #555; padding-left: 10px;">
+                        ${ord.items || 'No items listed'}
+                    </div>
+                    <span style="font-size:15px; color:#25D366;"><b>Total: ₹${ord.total || 0}</b></span>
+                    <span class="order-time">⏰ Received: ${ord.time || '--:--'}</span>
+                </div>
+            `;
+        });
+        orderList.innerHTML = html;
+    });
+
+    // FIREBASE DELETE FUNCTION
+    window.clearLiveOrder = async (id) => {
+        if(confirm("ఈ ఆర్డర్ ను డిలీట్ చేయాలా?")) {
+            try {
+                await deleteDoc(doc(db, "orders", id));
+            } catch (err) {
+                console.error("Delete Error:", err);
+            }
+        }
+    };
+</script>
+
+<script>
+    window.onload = loadSavedData;
+
+    function updateRightSide() {
+        let name = document.getElementById('itemName').value;
+        let price = document.getElementById('itemPrice').value;
+        let cat = document.getElementById('category').value;
+        
+        if(name && price) {
+            let menuItems = JSON.parse(localStorage.getItem('kvs_final_database')) || [];
+            menuItems.push({ name, price, cat, id: Date.now().toString() });
+            localStorage.setItem('kvs_final_database', JSON.stringify(menuItems));
+            alert("మెనూ అప్‌డేట్ అయ్యింది!");
+            location.reload();
+        } else {
+            alert("దయచేసి పేరు మరియు ధర ఎంటర్ చేయండి!");
+        }
+    }
+
+    function loadSavedData() {
+        let menuItems = JSON.parse(localStorage.getItem('kvs_final_database')) || [];
+        menuItems.forEach(item => {
+            let table = document.getElementById(item.cat + 'Table');
+            if(table) {
+                let row = table.insertRow();
+                row.innerHTML = `
+                    <td style="width: 60%;">${item.name}</td>
+                    <td style="width: 25%; color:#FFD700; font-weight:bold;">Rs. ${item.price}/-</td>
+                    <td><button class="del-btn" onclick="window.deleteLocalItem('${item.id}')">Delete</button></td>
+                `;
+            }
+        });
+    }
+
+    // MENU ITEM DELETE FUNCTION (FIXED)
+    window.deleteLocalItem = function(id) {
+        if(confirm("ఈ ఐటమ్ ను మెనూ నుండి తొలగించాలా?")) {
+            let menuItems = JSON.parse(localStorage.getItem('kvs_final_database')) || [];
+            let updatedMenu = menuItems.filter(i => String(i.id) !== String(id));
+            localStorage.setItem('kvs_final_database', JSON.stringify(updatedMenu));
+            location.reload();
+        }
+    }
+</script>
+
+</body>
+</html>
