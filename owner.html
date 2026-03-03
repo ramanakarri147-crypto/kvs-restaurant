@@ -7,8 +7,10 @@
     <style>
         html { scroll-behavior: smooth; }
         body { margin: 0; background: #1a1a1a; color: white; font-family: 'Poppins', sans-serif; padding: 20px; }
-        .header { text-align: center; border-bottom: 2px solid #FFD700; padding-bottom: 20px; margin-bottom: 10px; }
+        .header { text-align: center; border-bottom: 2px solid #FFD700; padding-bottom: 20px; margin-bottom: 10px; position: relative; }
         .hotel-name { font-family: 'Righteous', cursive; font-size: 35px; color: #FFD700; text-transform: uppercase; }
+
+        .settings-btn { position: absolute; right: 10px; top: 10px; font-size: 24px; cursor: pointer; color: #FFD700; background: rgba(255,215,0,0.1); padding: 5px 10px; border-radius: 50%; border: 1px solid #FFD700; }
 
         .tabs-sector {
             display: flex; overflow-x: auto; gap: 10px; padding: 15px 0;
@@ -44,21 +46,56 @@
         .live-order-card {
             background: #222; padding: 15px; margin-bottom: 10px; 
             border-radius: 8px; border-left: 5px solid #25D366; 
-            position: relative; animation: slideIn 0.3s ease-out;
+            position: relative; 
+            animation: slideFromTop 0.5s ease-out;
         }
+        @keyframes slideFromTop {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .table-badge {
             background: #25D366; color: black; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; margin-left: 10px;
         }
         .order-time {
             display: block; color: #888; font-size: 11px; margin-top: 8px; font-weight: bold; border-top: 1px solid #333; padding-top: 5px;
         }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; padding: 20px; box-sizing: border-box; overflow-y: auto; }
+        .modal-content { max-width: 800px; margin: auto; background: #222; padding: 20px; border-radius: 15px; border: 1px solid #FFD700; }
+        .grid-50 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 20px; }
+        .table-btn { background: #333; color: #FFD700; border: 1px solid #FFD700; padding: 10px; border-radius: 5px; cursor: pointer; text-align: center; font-weight: bold; }
+        .table-btn:hover { background: #FFD700; color: #000; }
+        .menu-option { background: #444; padding: 15px; margin: 10px 0; border-radius: 8px; cursor: pointer; text-align: center; font-weight: bold; color: #FFD700; }
     </style>
 </head>
 <body>
 
 <div class="header">
     <div class="hotel-name">KVS RESTAURANT - ADMIN PANEL</div>
+    <div class="settings-btn" onclick="openSettings()">⚙️</div>
+</div>
+
+<div id="settingsModal" class="modal">
+    <div class="modal-content">
+        <button onclick="closeSettings()" style="float:right; background:red; color:white; border:none; padding:5px 10px; cursor:pointer; border-radius: 5px;">X</button>
+        <h2 id="modalTitle" style="color:#FFD700;">Settings</h2>
+        
+        <div id="mainOptions">
+            <div class="menu-option" onclick="showTablesGrid()">📂 Tables (1-50)</div>
+            <div class="menu-option" onclick="showHistory('all')">📊 Total History</div>
+        </div>
+
+        <div id="tablesGrid" style="display:none;">
+            <button onclick="backToSettings()" style="background:#555; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">⬅ Back</button>
+            <div class="grid-50" id="gridContainer"></div>
+        </div>
+
+        <div id="historyResult" style="display:none; margin-top:20px;">
+            <button onclick="backToSettings()" style="background:#555; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">⬅ Back</button>
+            <div id="historyContent" style="margin-top: 15px;"></div>
+        </div>
+    </div>
 </div>
 
 <div class="tabs-sector">
@@ -92,7 +129,7 @@
         <a href="index.html" class="view-btn" target="_blank">VIEW CUSTOMER MENU</a>
 
         <div id="owner-orders-section">
-            <h3 style="color: #25D366; text-align: center;">📥 LIVE ORDERS</h3>
+            <h3 style="color: #25D366; text-align: center;">📥 LIVE ORDERS (కొత్తవి పైన)</h3>
             <div id="order-display-list">
                 <p style="text-align: center; color: #888; font-size: 12px;">ఆర్డర్ల కోసం చూస్తున్నాం...</p>
             </div>
@@ -113,7 +150,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDYOgbu7yfwlSps_-32frEedWss1qmRQoM", 
@@ -127,15 +164,36 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // LIVE ORDERS LISTENER
-    onSnapshot(collection(db, "orders"), (snapshot) => {
+    // --- కేవలం ఈ వాయిస్ ఫంక్షన్ కొత్తగా యాడ్ చేశాను ---
+    function playNewOrderVoice() {
+        let msg = new SpeechSynthesisUtterance();
+        msg.text = "ఆర్డర్ వచ్చింది చూసుకోండి సార్";
+        msg.lang = 'te-IN'; 
+        msg.rate = 1; 
+        msg.pitch = 1; 
+        window.speechSynthesis.speak(msg);
+    }
+
+    let firstLoad = true;
+    const ordersRef = collection(db, "orders");
+    const q = query(ordersRef, orderBy("time", "desc")); 
+
+    onSnapshot(q, (snapshot) => {
         const orderList = document.getElementById('order-display-list');
         let html = "";
         
         if (snapshot.empty) {
             orderList.innerHTML = '<p style="text-align: center; color: #888; font-size: 12px;">కొత్త ఆర్డర్లు లేవు.</p>';
+            firstLoad = false;
             return;
         }
+
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === "added" && !firstLoad) {
+                // కొత్త ఆర్డర్ వచ్చినప్పుడు మీ వాయిస్ ప్లే అవుతుంది
+                playNewOrderVoice();
+            }
+        });
 
         snapshot.forEach((orderDoc) => {
             const ord = orderDoc.data();
@@ -145,7 +203,7 @@
             html += `
                 <div class="live-order-card">
                     <button onclick="window.clearLiveOrder('${id}')" style="float:right; background:#ff4444; border:none; color:white; border-radius:4px; cursor:pointer; padding: 4px 8px; font-weight:bold;">CLEAR</button>
-                    <b style="color: #FFD700;">Customer: ${ord.customer || 'Guest'}</b> ${tableBadge} <br>
+                    <b style="color: #FFD700;">Customer: ${ord.customer || 'Guest'} గారు</b> ${tableBadge} <br>
                     <div style="margin: 8px 0; font-size:13px; color:#eee; border-left: 2px solid #555; padding-left: 10px;">
                         ${ord.items || 'No items listed'}
                     </div>
@@ -155,21 +213,80 @@
             `;
         });
         orderList.innerHTML = html;
+        firstLoad = false;
     });
 
-    // FIREBASE DELETE FUNCTION
     window.clearLiveOrder = async (id) => {
-        if(confirm("ఈ ఆర్డర్ ను డిలీట్ చేయాలా?")) {
+        if(confirm("ఈ ఆర్డర్ ను డిలీట్ (Delete) చేయాలా?")) {
             try {
                 await deleteDoc(doc(db, "orders", id));
-            } catch (err) {
-                console.error("Delete Error:", err);
+            } catch (e) {
+                alert("Error deleting order.");
             }
+        }
+    };
+
+    window.showHistory = async (type) => {
+        document.getElementById('mainOptions').style.display = 'none';
+        document.getElementById('tablesGrid').style.display = 'none';
+        document.getElementById('historyResult').style.display = 'block';
+        const content = document.getElementById('historyContent');
+        content.innerHTML = "<p style='color: #FFD700;'>వెతుకుతున్నాం...</p>";
+
+        const querySnapshot = await getDocs(collection(db, "orders"));
+        let html = `<table border="1" style="width:100%; border-collapse:collapse; color:white; font-size:11px; text-align:left;">
+                    <tr style="background:#333; color:#FFD700;">
+                        <th style="padding:8px;">Time</th>
+                        <th style="padding:8px;">Name</th>
+                        <th style="padding:8px;">Items</th>
+                        <th style="padding:8px;">Total</th>
+                    </tr>`;
+        let totalDayBill = 0;
+        let found = false;
+
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            if(type === 'all' || data.table == type) {
+                found = true;
+                html += `<tr>
+                    <td style="padding:8px; white-space:nowrap;">${data.time || 'N/A'}</td>
+                    <td style="padding:8px;">${data.customer || 'Guest'}</td>
+                    <td style="padding:8px;">${data.items}</td>
+                    <td style="padding:8px;">₹${data.total}</td>
+                </tr>`;
+                totalDayBill += Number(data.total);
+            }
+        });
+
+        if(!found) {
+            content.innerHTML = "<p style='color:#888;'>ఈ టేబుల్ మీద ప్రస్తుతానికి ఆర్డర్లు లేవు.</p>";
+        } else {
+            html += `</table><div style="margin-top:15px; text-align:right;"><b style="color:#25D366; font-size:18px;">Total Bill: ₹${totalDayBill}</b></div>`;
+            content.innerHTML = html;
         }
     };
 </script>
 
 <script>
+    function openSettings() { document.getElementById('settingsModal').style.display = 'block'; backToSettings(); }
+    function closeSettings() { document.getElementById('settingsModal').style.display = 'none'; }
+    function backToSettings() {
+        document.getElementById('mainOptions').style.display = 'block';
+        document.getElementById('tablesGrid').style.display = 'none';
+        document.getElementById('historyResult').style.display = 'none';
+        document.getElementById('modalTitle').innerText = "Settings";
+    }
+    function showTablesGrid() {
+        document.getElementById('mainOptions').style.display = 'none';
+        document.getElementById('tablesGrid').style.display = 'block';
+        document.getElementById('modalTitle').innerText = "Select Table (1-50)";
+        const container = document.getElementById('gridContainer');
+        container.innerHTML = "";
+        for(let i=1; i<=50; i++) {
+            container.innerHTML += `<div class="table-btn" onclick="showHistory(${i})">${i}</div>`;
+        }
+    }
+
     window.onload = loadSavedData;
 
     function updateRightSide() {
@@ -203,7 +320,6 @@
         });
     }
 
-    // MENU ITEM DELETE FUNCTION (FIXED)
     window.deleteLocalItem = function(id) {
         if(confirm("ఈ ఐటమ్ ను మెనూ నుండి తొలగించాలా?")) {
             let menuItems = JSON.parse(localStorage.getItem('kvs_final_database')) || [];
