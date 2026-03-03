@@ -30,7 +30,6 @@
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 10000; }
         .card { background: white; color: black; padding: 20px; border-radius: 15px; width: 85%; max-width: 350px; text-align: center; }
         .finish-btn { background: #25D366; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; margin-top: 15px; cursor: pointer; font-size: 16px; }
-        /* Back Button Styling */
         #adminBack { position: absolute; left: 15px; top: 20px; color: #FFD700; text-decoration: none; font-size: 24px; font-weight: bold; display: none; z-index: 1002; }
     </style>
 </head>
@@ -68,7 +67,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDYOgbu7yfwlSps_-32frEedWss1qmRQoM", 
@@ -92,7 +91,6 @@
       { id: 'coolDrinks', name: 'Cool Drinks' }, { id: 'waterBottle', name: 'Water Bottle' }
   ];
 
-  // Logic to show Back button only for Admin
   window.addEventListener('load', () => {
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('admin') === 'true') {
@@ -105,11 +103,18 @@
       if (customerName.length < 2) return alert("దయచేసి మీ పేరు ఇవ్వండి!");
       document.getElementById('welcome-screen').style.display = 'none';
       document.getElementById('main-menu').style.display = 'block';
-      renderUI();
+      fetchMenu(); // ఇక్కడ ఆన్‌లైన్ డేటాను పిలుస్తున్నాం
   }
 
-  function renderUI() {
-      const menuData = JSON.parse(localStorage.getItem('kvs_final_database')) || [];
+  // ఆన్‌లైన్ డేటాబేస్ నుండి మెనూ తెచ్చుకునే ఫంక్షన్
+  function fetchMenu() {
+      onSnapshot(collection(db, "menu_items"), (snapshot) => {
+          const menuData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          renderUI(menuData);
+      });
+  }
+
+  function renderUI(menuData) {
       let tabHtml = "";
       sectors.forEach(s => tabHtml += `<a href="#${s.id}" class="tab-link">${s.name}</a>`);
       document.getElementById('sector-tabs').innerHTML = tabHtml;
@@ -120,13 +125,13 @@
           if(items.length > 0) {
               menuHtml += `<div class="category-group" id="${s.id}"><div class="category-header">${s.name}</div>`;
               items.forEach(item => {
-                  let cleanId = item.id || (item.name + item.price).replace(/\s/g, ''); 
+                  let cleanId = item.id; 
                   menuHtml += `<div class="menu-item"><div class="food-info"><b>${item.name}</b><span>₹${item.price}</span></div><div id="btn-${cleanId}"><button class="add-btn" onclick="addToCart('${cleanId}','${item.name}',${item.price})">ADD</button></div></div>`;
               });
               menuHtml += `</div>`;
           }
       });
-      document.getElementById('food-list').innerHTML = menuHtml || "<p style='text-align:center; padding:20px;'>మెనూ ఖాళీగా ఉంది.</p>";
+      document.getElementById('food-list').innerHTML = menuHtml || "<p style='text-align:center; padding:20px;'>మెనూ లోడ్ అవుతోంది...</p>";
       updateCart();
   }
 
@@ -140,7 +145,7 @@
       cart[name].qty += delta;
       if (cart[name].qty <= 0) { 
           delete cart[name]; 
-          renderUI(); 
+          fetchMenu(); // బటన్ మళ్ళీ 'ADD' గా మారడానికి
       }
       updateCart();
   }
@@ -169,7 +174,6 @@
           cartBar.style.display = 'none';
           reviewList.style.display = 'none';
       }
-      
       document.getElementById('total-val').innerText = `${count} Items | ₹${total}`;
   }
 
@@ -184,7 +188,6 @@
       html += `</div><h3 style="color:black; text-align:right;">Total: ₹${total}</h3>`;
       html += `<button class="finish-btn" onclick="submitFinal()">CONFIRM ORDER</button>`;
       html += `<button onclick="document.getElementById('main-modal').style.display='none'" style="background:none; border:none; color:gray; margin-top:10px; cursor:pointer;">Cancel</button>`;
-      
       document.getElementById('modal-content').innerHTML = html;
       document.getElementById('main-modal').style.display = 'flex';
   }
@@ -211,7 +214,7 @@
           alert("Order Done! మీ ఆర్డర్ విజయవంతంగా పంపబడింది.");
           cart = {}; 
           document.getElementById('main-modal').style.display = 'none';
-          renderUI(); 
+          fetchMenu(); 
       } catch (e) {
           alert("క్షమించండి, ఆర్డర్ పంపడంలో సమస్య వచ్చింది.");
       }
@@ -224,10 +227,8 @@
   }
 
   window.startApp = startApp;
-  window.renderUI = renderUI;
   window.addToCart = addToCart;
   window.changeQty = changeQty;
-  window.updateCart = updateCart;
   window.showReceipt = showReceipt;
   window.submitFinal = submitFinal;
   window.searchFood = searchFood;

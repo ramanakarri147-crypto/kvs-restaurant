@@ -5,62 +5,30 @@
     <title>KVS Admin Panel - Full Stable Version</title>
     <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Poppins:wght@300;500&display=swap" rel="stylesheet">
     <style>
+        /* మీ పాత CSS స్టైల్స్ అన్నీ అలాగే ఉంచాను, ఏమీ మార్చలేదు */
         html { scroll-behavior: smooth; }
         body { margin: 0; background: #1a1a1a; color: white; font-family: 'Poppins', sans-serif; padding: 20px; }
         .header { text-align: center; border-bottom: 2px solid #FFD700; padding-bottom: 20px; margin-bottom: 10px; position: relative; }
         .hotel-name { font-family: 'Righteous', cursive; font-size: 35px; color: #FFD700; text-transform: uppercase; }
-
         .settings-btn { position: absolute; right: 10px; top: 10px; font-size: 24px; cursor: pointer; color: #FFD700; background: rgba(255,215,0,0.1); padding: 5px 10px; border-radius: 50%; border: 1px solid #FFD700; }
-
-        .tabs-sector {
-            display: flex; overflow-x: auto; gap: 10px; padding: 15px 0;
-            position: sticky; top: 0; background: #1a1a1a; z-index: 1000;
-            scrollbar-width: none; border-bottom: 1px solid #333; margin-bottom: 20px;
-        }
-        .sector-btn {
-            background: transparent; color: #FFD700; border: 1px solid #FFD700;
-            padding: 8px 15px; border-radius: 20px; white-space: nowrap;
-            cursor: pointer; text-decoration: none; font-size: 13px; font-weight: bold;
-        }
-
+        .tabs-sector { display: flex; overflow-x: auto; gap: 10px; padding: 15px 0; position: sticky; top: 0; background: #1a1a1a; z-index: 1000; scrollbar-width: none; border-bottom: 1px solid #333; margin-bottom: 20px; }
+        .sector-btn { background: transparent; color: #FFD700; border: 1px solid #FFD700; padding: 8px 15px; border-radius: 20px; white-space: nowrap; cursor: pointer; text-decoration: none; font-size: 13px; font-weight: bold; }
         .container { display: flex; gap: 20px; align-items: flex-start; }
         .left-box { flex: 1; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; border: 1.5px solid #444; position: sticky; top: 80px; }
         .right-box { flex: 2; display: flex; flex-direction: column; gap: 20px; }
-        
         .category-card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; border-left: 5px solid #FFD700; scroll-margin-top: 100px; }
         h3 { color: #FFD700; margin-top: 0; }
-        
         input, select { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #555; background: #333; color: white; box-sizing: border-box; }
-        
         .update-btn { background: #FFD700; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; color: #000; font-size: 16px; margin-bottom: 10px; }
         .view-btn { background: #25D366; color: white; text-decoration: none; display: block; text-align: center; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 16px; }
-        
         table { width: 100%; border-collapse: collapse; }
         td { padding: 12px; border-bottom: 1px solid #333; font-size: 15px; }
         .del-btn { background: #ff4444; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; float: right; font-weight: bold; }
-
-        #owner-orders-section {
-            margin-top: 30px; padding: 20px; background: #111; 
-            border: 2px solid #25D366; border-radius: 15px;
-        }
-        .live-order-card {
-            background: #222; padding: 15px; margin-bottom: 10px; 
-            border-radius: 8px; border-left: 5px solid #25D366; 
-            position: relative; 
-            animation: slideFromTop 0.5s ease-out;
-        }
-        @keyframes slideFromTop {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .table-badge {
-            background: #25D366; color: black; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; margin-left: 10px;
-        }
-        .order-time {
-            display: block; color: #888; font-size: 11px; margin-top: 8px; font-weight: bold; border-top: 1px solid #333; padding-top: 5px;
-        }
-
+        #owner-orders-section { margin-top: 30px; padding: 20px; background: #111; border: 2px solid #25D366; border-radius: 15px; }
+        .live-order-card { background: #222; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 5px solid #25D366; position: relative; animation: slideFromTop 0.5s ease-out; }
+        @keyframes slideFromTop { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        .table-badge { background: #25D366; color: black; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; margin-left: 10px; }
+        .order-time { display: block; color: #888; font-size: 11px; margin-top: 8px; font-weight: bold; border-top: 1px solid #333; padding-top: 5px; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; padding: 20px; box-sizing: border-box; overflow-y: auto; }
         .modal-content { max-width: 800px; margin: auto; background: #222; padding: 20px; border-radius: 15px; border: 1px solid #FFD700; }
         .grid-50 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 20px; }
@@ -80,17 +48,14 @@
     <div class="modal-content">
         <button onclick="closeSettings()" style="float:right; background:red; color:white; border:none; padding:5px 10px; cursor:pointer; border-radius: 5px;">X</button>
         <h2 id="modalTitle" style="color:#FFD700;">Settings</h2>
-        
         <div id="mainOptions">
             <div class="menu-option" onclick="showTablesGrid()">📂 Tables (1-50)</div>
             <div class="menu-option" onclick="showHistory('all')">📊 Total History</div>
         </div>
-
         <div id="tablesGrid" style="display:none;">
             <button onclick="backToSettings()" style="background:#555; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">⬅ Back</button>
             <div class="grid-50" id="gridContainer"></div>
         </div>
-
         <div id="historyResult" style="display:none; margin-top:20px;">
             <button onclick="backToSettings()" style="background:#555; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">⬅ Back</button>
             <div id="historyContent" style="margin-top: 15px;"></div>
@@ -129,7 +94,7 @@
         <a href="index.html" class="view-btn" target="_blank">VIEW CUSTOMER MENU</a>
 
         <div id="owner-orders-section">
-            <h3 style="color: #25D366; text-align: center;">📥 LIVE ORDERS (కొత్తవి పైన)</h3>
+            <h3 style="color: #25D366; text-align: center;">📥 LIVE ORDERS</h3>
             <div id="order-display-list">
                 <p style="text-align: center; color: #888; font-size: 12px;">ఆర్డర్ల కోసం చూస్తున్నాం...</p>
             </div>
@@ -150,7 +115,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDYOgbu7yfwlSps_-32frEedWss1qmRQoM", 
@@ -164,16 +129,58 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // --- కేవలం ఈ వాయిస్ ఫంక్షన్ కొత్తగా యాడ్ చేశాను ---
+    // --- Voice Alert ---
     function playNewOrderVoice() {
         let msg = new SpeechSynthesisUtterance();
         msg.text = "ఆర్డర్ వచ్చింది చూసుకోండి సార్";
         msg.lang = 'te-IN'; 
-        msg.rate = 1; 
-        msg.pitch = 1; 
         window.speechSynthesis.speak(msg);
     }
 
+    // --- Firebase Menu Sync (New) ---
+    // మెనూ ఐటమ్స్ ని ఆన్‌లైన్ నుండి రియల్ టైమ్ లో చూపిస్తుంది
+    onSnapshot(collection(db, "menu_items"), (snapshot) => {
+        const sectors = ['vegBiryani', 'nonVegBiryani', 'vegFriedRice', 'nonVegFriedRice', 'starters', 'iceCreams', 'coolDrinks', 'waterBottle'];
+        sectors.forEach(s => document.getElementById(s + 'Table').innerHTML = ""); // Clear tables
+
+        snapshot.forEach((itemDoc) => {
+            const item = itemDoc.data();
+            const id = itemDoc.id;
+            const table = document.getElementById(item.cat + 'Table');
+            if(table) {
+                let row = table.insertRow();
+                row.innerHTML = `
+                    <td style="width: 60%;">${item.name}</td>
+                    <td style="width: 25%; color:#FFD700; font-weight:bold;">Rs. ${item.price}/-</td>
+                    <td><button class="del-btn" onclick="window.deleteItem('${id}')">Delete</button></td>
+                `;
+            }
+        });
+    });
+
+    // మెనూ ఐటమ్ ని Firebase లో సేవ్ చేయడం
+    window.updateRightSide = async () => {
+        let name = document.getElementById('itemName').value;
+        let price = document.getElementById('itemPrice').value;
+        let cat = document.getElementById('category').value;
+        
+        if(name && price) {
+            try {
+                await addDoc(collection(db, "menu_items"), { name, price: Number(price), cat });
+                alert("మెనూ ఆన్‌లైన్‌లో అప్‌డేట్ అయ్యింది!");
+                document.getElementById('itemName').value = "";
+                document.getElementById('itemPrice').value = "";
+            } catch (e) { alert("Error saving to database."); }
+        } else { alert("దయచేసి పేరు మరియు ధర ఎంటర్ చేయండి!"); }
+    };
+
+    window.deleteItem = async (id) => {
+        if(confirm("ఈ ఐటమ్ ను తొలగించాలా?")) {
+            await deleteDoc(doc(db, "menu_items", id));
+        }
+    };
+
+    // --- Live Orders Logic ---
     let firstLoad = true;
     const ordersRef = collection(db, "orders");
     const q = query(ordersRef, orderBy("time", "desc")); 
@@ -181,51 +188,37 @@
     onSnapshot(q, (snapshot) => {
         const orderList = document.getElementById('order-display-list');
         let html = "";
-        
         if (snapshot.empty) {
             orderList.innerHTML = '<p style="text-align: center; color: #888; font-size: 12px;">కొత్త ఆర్డర్లు లేవు.</p>';
             firstLoad = false;
             return;
         }
-
         snapshot.docChanges().forEach((change) => {
-            if (change.type === "added" && !firstLoad) {
-                // కొత్త ఆర్డర్ వచ్చినప్పుడు మీ వాయిస్ ప్లే అవుతుంది
-                playNewOrderVoice();
-            }
+            if (change.type === "added" && !firstLoad) { playNewOrderVoice(); }
         });
-
         snapshot.forEach((orderDoc) => {
             const ord = orderDoc.data();
             const id = orderDoc.id;
-            let tableBadge = `<span class="table-badge">Table: ${ord.table || 'Counter'}</span>`;
-
             html += `
                 <div class="live-order-card">
                     <button onclick="window.clearLiveOrder('${id}')" style="float:right; background:#ff4444; border:none; color:white; border-radius:4px; cursor:pointer; padding: 4px 8px; font-weight:bold;">CLEAR</button>
-                    <b style="color: #FFD700;">Customer: ${ord.customer || 'Guest'} గారు</b> ${tableBadge} <br>
-                    <div style="margin: 8px 0; font-size:13px; color:#eee; border-left: 2px solid #555; padding-left: 10px;">
-                        ${ord.items || 'No items listed'}
-                    </div>
+                    <b style="color: #FFD700;">Customer: ${ord.customer || 'Guest'} గారు</b> <span class="table-badge">Table: ${ord.table || 'Counter'}</span> <br>
+                    <div style="margin: 8px 0; font-size:13px; color:#eee; border-left: 2px solid #555; padding-left: 10px;">${ord.items}</div>
                     <span style="font-size:15px; color:#25D366;"><b>Total: ₹${ord.total || 0}</b></span>
                     <span class="order-time">⏰ Received: ${ord.time || '--:--'}</span>
-                </div>
-            `;
+                </div>`;
         });
         orderList.innerHTML = html;
         firstLoad = false;
     });
 
     window.clearLiveOrder = async (id) => {
-        if(confirm("ఈ ఆర్డర్ ను డిలీట్ (Delete) చేయాలా?")) {
-            try {
-                await deleteDoc(doc(db, "orders", id));
-            } catch (e) {
-                alert("Error deleting order.");
-            }
+        if(confirm("ఈ ఆర్డర్ ను Delete చేయాలా?")) {
+            await deleteDoc(doc(db, "orders", id));
         }
     };
 
+    // History Logic
     window.showHistory = async (type) => {
         document.getElementById('mainOptions').style.display = 'none';
         document.getElementById('tablesGrid').style.display = 'none';
@@ -235,12 +228,7 @@
 
         const querySnapshot = await getDocs(collection(db, "orders"));
         let html = `<table border="1" style="width:100%; border-collapse:collapse; color:white; font-size:11px; text-align:left;">
-                    <tr style="background:#333; color:#FFD700;">
-                        <th style="padding:8px;">Time</th>
-                        <th style="padding:8px;">Name</th>
-                        <th style="padding:8px;">Items</th>
-                        <th style="padding:8px;">Total</th>
-                    </tr>`;
+                    <tr style="background:#333; color:#FFD700;"><th style="padding:8px;">Time</th><th style="padding:8px;">Name</th><th style="padding:8px;">Items</th><th style="padding:8px;">Total</th></tr>`;
         let totalDayBill = 0;
         let found = false;
 
@@ -248,19 +236,12 @@
             const data = doc.data();
             if(type === 'all' || data.table == type) {
                 found = true;
-                html += `<tr>
-                    <td style="padding:8px; white-space:nowrap;">${data.time || 'N/A'}</td>
-                    <td style="padding:8px;">${data.customer || 'Guest'}</td>
-                    <td style="padding:8px;">${data.items}</td>
-                    <td style="padding:8px;">₹${data.total}</td>
-                </tr>`;
+                html += `<tr><td style="padding:8px;">${data.time}</td><td style="padding:8px;">${data.customer}</td><td style="padding:8px;">${data.items}</td><td style="padding:8px;">₹${data.total}</td></tr>`;
                 totalDayBill += Number(data.total);
             }
         });
-
-        if(!found) {
-            content.innerHTML = "<p style='color:#888;'>ఈ టేబుల్ మీద ప్రస్తుతానికి ఆర్డర్లు లేవు.</p>";
-        } else {
+        if(!found) content.innerHTML = "<p style='color:#888;'>డేటా లేదు.</p>";
+        else {
             html += `</table><div style="margin-top:15px; text-align:right;"><b style="color:#25D366; font-size:18px;">Total Bill: ₹${totalDayBill}</b></div>`;
             content.innerHTML = html;
         }
@@ -286,49 +267,6 @@
             container.innerHTML += `<div class="table-btn" onclick="showHistory(${i})">${i}</div>`;
         }
     }
-
-    window.onload = loadSavedData;
-
-    function updateRightSide() {
-        let name = document.getElementById('itemName').value;
-        let price = document.getElementById('itemPrice').value;
-        let cat = document.getElementById('category').value;
-        
-        if(name && price) {
-            let menuItems = JSON.parse(localStorage.getItem('kvs_final_database')) || [];
-            menuItems.push({ name, price, cat, id: Date.now().toString() });
-            localStorage.setItem('kvs_final_database', JSON.stringify(menuItems));
-            alert("మెనూ అప్‌డేట్ అయ్యింది!");
-            location.reload();
-        } else {
-            alert("దయచేసి పేరు మరియు ధర ఎంటర్ చేయండి!");
-        }
-    }
-
-    function loadSavedData() {
-        let menuItems = JSON.parse(localStorage.getItem('kvs_final_database')) || [];
-        menuItems.forEach(item => {
-            let table = document.getElementById(item.cat + 'Table');
-            if(table) {
-                let row = table.insertRow();
-                row.innerHTML = `
-                    <td style="width: 60%;">${item.name}</td>
-                    <td style="width: 25%; color:#FFD700; font-weight:bold;">Rs. ${item.price}/-</td>
-                    <td><button class="del-btn" onclick="window.deleteLocalItem('${item.id}')">Delete</button></td>
-                `;
-            }
-        });
-    }
-
-    window.deleteLocalItem = function(id) {
-        if(confirm("ఈ ఐటమ్ ను మెనూ నుండి తొలగించాలా?")) {
-            let menuItems = JSON.parse(localStorage.getItem('kvs_final_database')) || [];
-            let updatedMenu = menuItems.filter(i => String(i.id) !== String(id));
-            localStorage.setItem('kvs_final_database', JSON.stringify(updatedMenu));
-            location.reload();
-        }
-    }
 </script>
-
 </body>
 </html>
