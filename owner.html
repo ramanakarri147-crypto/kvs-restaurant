@@ -2,7 +2,7 @@
 <html lang="te">
 <head>
     <meta charset="UTF-8">
-    <title>KVS Admin Panel - Final Stable Version</title>
+    <title>KVS Admin Panel - Stable Free Version</title>
     <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Poppins:wght@300;500&display=swap" rel="stylesheet">
     <style>
         html { scroll-behavior: smooth; }
@@ -16,6 +16,7 @@
         .left-box { flex: 1; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; border: 1.5px solid #444; position: sticky; top: 80px; }
         .right-box { flex: 2; display: flex; flex-direction: column; gap: 20px; }
         .category-card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; border-left: 5px solid #FFD700; scroll-margin-top: 100px; margin-bottom: 15px; }
+        .category-card img { width: 100%; height: 180px; object-fit: cover; border-radius: 10px; margin-bottom: 10px; border: 1px solid #444; }
         h3 { color: #FFD700; margin-top: 0; }
         input, select { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #555; background: #333; color: white; box-sizing: border-box; }
         .update-btn { background: #FFD700; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; color: #000; font-size: 16px; margin-bottom: 10px; }
@@ -23,17 +24,13 @@
         table { width: 100%; border-collapse: collapse; }
         td { padding: 12px; border-bottom: 1px solid #333; font-size: 15px; }
         .del-btn { background: #ff4444; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; float: right; font-weight: bold; }
-        #owner-orders-section { margin-top: 30px; padding: 20px; background: #111; border: 2px solid #25D366; border-radius: 15px; }
-        .live-order-card { background: #222; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 5px solid #25D366; position: relative; }
-        .table-badge { background: #25D366; color: black; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; margin-left: 10px; }
-        .order-time { display: block; color: #888; font-size: 11px; margin-top: 8px; font-weight: bold; border-top: 1px solid #333; padding-top: 5px; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; padding: 20px; box-sizing: border-box; overflow-y: auto; }
         .modal-content { max-width: 800px; margin: auto; background: #222; padding: 20px; border-radius: 15px; border: 1px solid #FFD700; }
-        .grid-50 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 20px; }
-        .table-btn { background: #333; color: #FFD700; border: 1px solid #FFD700; padding: 10px; border-radius: 5px; cursor: pointer; text-align: center; font-weight: bold; }
         .menu-option { background: #444; padding: 15px; margin: 10px 0; border-radius: 8px; cursor: pointer; text-align: center; font-weight: bold; color: #FFD700; }
         .sector-list-item { display: flex; justify-content: space-between; align-items: center; background: #333; padding: 10px; margin: 5px 0; border-radius: 5px; border-left: 3px solid #FFD700; }
-        .preview-img { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; margin-right: 10px; border: 1px solid #FFD700; }
+        .preview-img { width: 45px; height: 45px; border-radius: 4px; object-fit: cover; margin-right: 10px; border: 1px solid #FFD700; }
+        #order-display-list { margin-top: 15px; }
+        .live-order-card { background: #222; padding: 12px; margin-bottom: 10px; border-radius: 8px; border-left: 5px solid #25D366; }
     </style>
 </head>
 <body>
@@ -50,8 +47,6 @@
         
         <div id="mainOptions">
             <div class="menu-option" onclick="showSectorManager()">📁 Manage Sectors (Add Name & Image)</div>
-            <div class="menu-option" onclick="showTablesGrid()">📂 Tables (1-50)</div>
-            <div class="menu-option" onclick="showHistory('all')">📊 Total History</div>
         </div>
 
         <div id="sectorManager" style="display:none;">
@@ -60,20 +55,10 @@
                 <input type="text" id="newSectorName" placeholder="సెక్టార్ పేరు (Ex: Snacks)">
                 <label style="font-size: 12px; color: #FFD700; display: block; margin-bottom: 5px;">సెక్టార్ ఫోటో ఎంచుకోండి:</label>
                 <input type="file" id="newSectorImage" accept="image/*">
-                <button id="addSectorBtn" onclick="window.addNewSector()" style="background:#FFD700; border:none; padding:10px; width:100%; border-radius:5px; font-weight:bold; cursor:pointer; margin-top: 10px;">+ ADD SECTOR WITH IMAGE</button>
+                <button id="addSectorBtn" onclick="window.addNewSector()" style="background:#FFD700; border:none; padding:10px; width:100%; border-radius:5px; font-weight:bold; cursor:pointer; margin-top: 10px;">+ ADD SECTOR (FREE UPLOAD)</button>
             </div>
             <h3 style="margin-top:20px; font-size:16px;">ప్రస్తుత సెక్టార్లు:</h3>
             <div id="sectorListContainer"></div>
-        </div>
-
-        <div id="tablesGrid" style="display:none;">
-            <button onclick="backToSettings()" style="background:#555; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">⬅ Back</button>
-            <div class="grid-50" id="gridContainer"></div>
-        </div>
-        
-        <div id="historyResult" style="display:none; margin-top:20px;">
-            <button onclick="backToSettings()" style="background:#555; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">⬅ Back</button>
-            <div id="historyContent" style="margin-top: 15px;"></div>
         </div>
     </div>
 </div>
@@ -89,8 +74,8 @@
         <button class="update-btn" onclick="updateRightSide()">UPDATE CUSTOMER MENU</button>
         <a href="index.html" class="view-btn" target="_blank">VIEW CUSTOMER MENU</a>
 
-        <div id="owner-orders-section">
-            <h3 style="color: #25D366; text-align: center;">📥 LIVE ORDERS</h3>
+        <div style="margin-top:20px; border-top:1px solid #444; padding-top:10px;">
+            <h3 style="color:#25D366;">📥 LIVE ORDERS</h3>
             <div id="order-display-list"></div>
         </div>
     </div>
@@ -99,7 +84,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc, getDocs, addDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc, addDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDYOgbu7yfwlSps_-32frEedWss1qmRQoM", 
@@ -113,15 +98,15 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // ఇక్కడ మీ ImgBB API Key ని పేస్ట్ చేయండి
-    const IMGBB_API_KEY = "YOUR_IMGBB_API_KEY_HERE"; 
+    // మీ ImgBB API Key ఇక్కడ ఉంది
+    const IMGBB_API_KEY = "88c8d1427e7d391a5c87ffd3134463f1"; 
 
     window.addNewSector = async () => {
         const sName = document.getElementById('newSectorName').value.trim();
         const sFile = document.getElementById('newSectorImage').files[0];
         const btn = document.getElementById('addSectorBtn');
 
-        if(!sName || !sFile) return alert("పేరు మరియు ఫోటో రెండూ ఇవ్వండి!");
+        if(!sName || !sFile) return alert("పేరు మరియు ఫోటో ఇవ్వండి!");
         
         btn.disabled = true;
         btn.innerText = "అప్‌లోడ్ అవుతోంది... ⏳";
@@ -155,11 +140,11 @@
             alert("Error: " + e.message); 
         } finally {
             btn.disabled = false;
-            btn.innerText = "+ ADD SECTOR WITH IMAGE";
+            btn.innerText = "+ ADD SECTOR (FREE UPLOAD)";
         }
     };
 
-    window.deleteSector = async (docId) => { if(confirm("ఈ సెక్టార్ ని తొలగించాలా?")) await deleteDoc(doc(db, "categories", docId)); };
+    window.deleteSector = async (docId) => { if(confirm("తొలగించాలా?")) await deleteDoc(doc(db, "categories", docId)); };
 
     onSnapshot(query(collection(db, "categories"), orderBy("timestamp", "asc")), (snapshot) => {
         const tabs = document.getElementById('tabsContainer');
@@ -171,12 +156,17 @@
         snapshot.forEach((d) => {
             const cat = d.data();
             tabs.innerHTML += `<a href="#${cat.id}" class="sector-btn">${cat.name}</a>`;
-            menuArea.innerHTML += `<div class="category-card" id="${cat.id}"><h3>${cat.name}</h3><table id="${cat.id}Table"></table></div>`;
+            menuArea.innerHTML += `
+                <div class="category-card" id="${cat.id}">
+                    <img src="${cat.image || ''}" onerror="this.style.display='none'">
+                    <h3>${cat.name}</h3>
+                    <table id="${cat.id}Table"></table>
+                </div>`;
             dropdown.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
             list.innerHTML += `
                 <div class="sector-list-item">
                     <div style="display:flex; align-items:center;">
-                        <img src="${cat.image || ''}" class="preview-img" onerror="this.src='https://via.placeholder.com/40'">
+                        <img src="${cat.image || ''}" class="preview-img">
                         <span>${cat.name}</span>
                     </div>
                     <button class="del-btn" onclick="window.deleteSector('${d.id}')">Delete</button>
@@ -193,7 +183,7 @@
                 const table = document.getElementById(item.cat + 'Table');
                 if(table) {
                     let row = table.insertRow();
-                    row.innerHTML = `<td>${item.name}</td><td style="color:#FFD700; font-weight:bold;">Rs. ${item.price}/-</td><td><button class="del-btn" onclick="window.deleteItem('${itemDoc.id}')">Delete</button></td>`;
+                    row.innerHTML = `<td>${item.name}</td><td style="color:#FFD700; font-weight:bold;">₹${item.price}</td><td><button class="del-btn" onclick="window.deleteItem('${itemDoc.id}')">X</button></td>`;
                 }
             });
         });
@@ -214,59 +204,29 @@
 
     onSnapshot(query(collection(db, "orders"), orderBy("timestamp", "desc")), (snapshot) => {
         const list = document.getElementById('order-display-list');
-        list.innerHTML = snapshot.empty ? '<p style="text-align:center; color:#888;">No orders.</p>' : "";
+        list.innerHTML = "";
         snapshot.forEach(d => {
             const ord = d.data();
             list.innerHTML += `<div class="live-order-card">
-                <button onclick="window.clearLiveOrder('${d.id}')" style="float:right; background:#ff4444; color:white; border:none; padding:5px; border-radius:4px; cursor:pointer;">X</button>
-                <b style="color:#FFD700;">Table: ${ord.table} | ${ord.customer}</b><br>
-                <small>${ord.items}</small><br>
-                <span style="color:#25D366;">₹${ord.total}</span>
-                <span class="order-time">${ord.time || ''}</span>
+                <b>Table: ${ord.table}</b> | <span>₹${ord.total}</span><br>
+                <small>${ord.items}</small>
             </div>`;
         });
     });
-
-    window.clearLiveOrder = async (id) => { if(confirm("Clear order?")) await deleteDoc(doc(db, "orders", id)); };
-
-    window.showHistory = async (type) => {
-        document.getElementById('mainOptions').style.display = 'none';
-        document.getElementById('historyResult').style.display = 'block';
-        const content = document.getElementById('historyContent');
-        const snap = await getDocs(query(collection(db, "orders"), orderBy("timestamp", "desc")));
-        let total = 0; let htm = `<table style="font-size:12px;"><tr><th>Time</th><th>Table</th><th>Total</th></tr>`;
-        snap.forEach(d => { 
-            const data = d.data(); 
-            if(type === 'all' || data.table == type) { 
-                htm += `<tr><td>${data.time || 'N/A'}</td><td>${data.table}</td><td>₹${data.total}</td></tr>`; 
-                total += Number(data.total); 
-            } 
-        });
-        content.innerHTML = htm + `</table><h4 style="color:#25D366; text-align:right;">Total: ₹${total}</h4>`;
-    };
 </script>
 
 <script>
-    function openSettings() { document.getElementById('settingsModal').style.display = 'block'; backToSettings(); }
+    function openSettings() { document.getElementById('settingsModal').style.display = 'block'; }
     function closeSettings() { document.getElementById('settingsModal').style.display = 'none'; }
     function backToSettings() {
         document.getElementById('mainOptions').style.display = 'block';
-        document.getElementById('tablesGrid').style.display = 'none';
-        document.getElementById('historyResult').style.display = 'none';
         document.getElementById('sectorManager').style.display = 'none';
-        document.getElementById('modalTitle').innerText = "Settings";
     }
     function showSectorManager() {
         document.getElementById('mainOptions').style.display = 'none';
         document.getElementById('sectorManager').style.display = 'block';
     }
-    function showTablesGrid() {
-        document.getElementById('mainOptions').style.display = 'none';
-        document.getElementById('tablesGrid').style.display = 'block';
-        const container = document.getElementById('gridContainer');
-        container.innerHTML = "";
-        for(let i=1; i<=50; i++) container.innerHTML += `<div class="table-btn" onclick="showHistory(${i})">${i}</div>`;
-    }
 </script>
+
 </body>
 </html>

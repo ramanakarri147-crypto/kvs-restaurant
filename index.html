@@ -18,8 +18,8 @@
         .category-group { margin: 15px; background: #161616; border-radius: 12px; border: 1px solid #222; overflow: hidden; scroll-margin-top: 170px; }
         .category-header { background: #FFD700; color: #000; padding: 10px; font-weight: bold; font-size: 14px; text-transform: uppercase; }
         
-        /* ఇమేజ్ కోసం స్టైల్ */
-        .category-img { width: 100%; height: 180px; object-fit: cover; display: block; border-bottom: 2px solid #FFD700; background: #222; }
+        /* ఇమేజ్ కోసం మెరుగైన స్టైల్ */
+        .category-img { width: 100%; height: 200px; object-fit: cover; display: block; background: #222 url('https://via.placeholder.com/400x200?text=KVS+Special') no-repeat center; border-bottom: 2px solid #FFD700; }
 
         .menu-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #222; align-items: center; }
         .food-info b { display: block; font-size: 15px; }
@@ -34,7 +34,6 @@
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 10000; }
         .card { background: white; color: black; padding: 20px; border-radius: 15px; width: 85%; max-width: 350px; text-align: center; }
         .finish-btn { background: #25D366; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; margin-top: 15px; cursor: pointer; font-size: 16px; }
-        #adminBack { position: absolute; left: 15px; top: 20px; color: #FFD700; text-decoration: none; font-size: 24px; font-weight: bold; display: none; z-index: 1002; }
     </style>
 </head>
 <body>
@@ -49,7 +48,6 @@
 
 <div id="main-menu" style="display:none;">
     <div class="header">
-        <a id="adminBack" href="javascript:history.back()">&#8592;</a>
         <div class="hotel-name">KVS RESTAURANT</div>
         <input type="text" id="search" class="search-box" placeholder="Search for food..." onkeyup="searchFood()">
     </div>
@@ -90,13 +88,6 @@
   let customerName = "";
   let dynamicSectors = [];
 
-  window.addEventListener('load', () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('admin') === 'true') {
-          document.getElementById('adminBack').style.display = 'block';
-      }
-  });
-
   function startApp() {
       customerName = document.getElementById('custName').value.trim();
       if (customerName.length < 2) return alert("దయచేసి మీ పేరు ఇవ్వండి!");
@@ -107,7 +98,11 @@
 
   function fetchData() {
       onSnapshot(query(collection(db, "categories"), orderBy("timestamp", "asc")), (snapSectors) => {
-          dynamicSectors = snapSectors.docs.map(doc => ({ id: doc.data().id, name: doc.data().name, image: doc.data().imageUrl || doc.data().image }));
+          dynamicSectors = snapSectors.docs.map(doc => ({ 
+              id: doc.data().id, 
+              name: doc.data().name, 
+              image: doc.data().image // ఇక్కడ ఫోటో లింక్ వస్తుంది
+          }));
           
           onSnapshot(collection(db, "menu_items"), (snapItems) => {
               const menuData = snapItems.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -127,6 +122,7 @@
           if(items.length > 0) {
               menuHtml += `<div class="category-group" id="${s.id}">`;
               
+              // ఫోటో ఉంటే డిస్‌ప్లే చేస్తుంది
               if(s.image) {
                   menuHtml += `<img src="${s.image}" class="category-img" alt="${s.name}" onerror="this.style.display='none'">`;
               }
@@ -135,7 +131,10 @@
               
               items.forEach(item => {
                   let cleanId = item.id; 
-                  menuHtml += `<div class="menu-item"><div class="food-info"><b>${item.name}</b><span>₹${item.price}</span></div><div id="btn-${cleanId}"><button class="add-btn" onclick="addToCart('${cleanId}','${item.name}',${item.price})">ADD</button></div></div>`;
+                  menuHtml += `<div class="menu-item">
+                                <div class="food-info"><b>${item.name}</b><span>₹${item.price}</span></div>
+                                <div id="btn-${cleanId}"><button class="add-btn" onclick="addToCart('${cleanId}','${item.name}',${item.price})">ADD</button></div>
+                               </div>`;
               });
               menuHtml += `</div>`;
           }
@@ -143,88 +142,65 @@
       document.getElementById('food-list').innerHTML = menuHtml || "<p style='text-align:center; padding:20px;'>మెనూ లోడ్ అవుతోంది...</p>";
       updateCart();
   }
- 
-  function addToCart(id, name, price) {
+
+  window.startApp = startApp;
+  window.addToCart = (id, name, price) => {
       if (!cart[name]) cart[name] = { id, price, qty: 1 };
       else cart[name].qty++;
       updateCart();
-  }
-
-  function changeQty(name, delta) {
+  };
+  window.changeQty = (name, delta) => {
       cart[name].qty += delta;
-      if (cart[name].qty <= 0) { 
-          delete cart[name]; 
-          fetchData(); 
-      }
+      if (cart[name].qty <= 0) { delete cart[name]; fetchData(); }
       updateCart();
-  }
-
-  function updateCart() {
+  };
+  window.updateCart = () => {
       let count = 0, total = 0, reviewHtml = "";
       for (let name in cart) {
           count += cart[name].qty;
           total += cart[name].price * cart[name].qty;
           reviewHtml += `<div class="review-item"><span>${name} x ${cart[name].qty}</span><span>₹${cart[name].price * cart[name].qty}</span></div>`;
-          
           const btnArea = document.getElementById(`btn-${cart[name].id}`);
-          if(btnArea) { 
-              btnArea.innerHTML = `<div class="qty-box"><button class="qty-btn" onclick="changeQty('${name}', -1)">-</button><span>${cart[name].qty}</span><button class="qty-btn" onclick="changeQty('${name}', 1)">+</button></div>`; 
-          }
+          if(btnArea) btnArea.innerHTML = `<div class="qty-box"><button class="qty-btn" onclick="changeQty('${name}', -1)">-</button><span>${cart[name].qty}</span><button class="qty-btn" onclick="changeQty('${name}', 1)">+</button></div>`;
       }
-      const cartBar = document.getElementById('cartBar');
-      const reviewList = document.getElementById('review-list');
-      if(count > 0) { cartBar.style.display = 'flex'; reviewList.style.display = 'block'; reviewList.innerHTML = `<div style="font-size:10px; color:#FFD700; padding-left:10px;">Selected Items:</div>` + reviewHtml; } 
-      else { cartBar.style.display = 'none'; reviewList.style.display = 'none'; }
+      document.getElementById('cartBar').style.display = count > 0 ? 'flex' : 'none';
+      document.getElementById('review-list').style.display = count > 0 ? 'block' : 'none';
+      document.getElementById('review-list').innerHTML = count > 0 ? `<div style="font-size:10px; color:#FFD700; padding:5px 10px;">Selected Items:</div>` + reviewHtml : "";
       document.getElementById('total-val').innerText = `${count} Items | ₹${total}`;
-  }
-
-  function showReceipt() {
-      let html = `<h3 style="color:black; margin-top:0;">Order Bill</h3><div style="text-align:left; margin:15px 0; color:black;">`;
+  };
+  window.showReceipt = () => {
+      let html = `<h3 style="margin-top:0;">Your Order</h3><div style="text-align:left; margin:15px 0;">`;
       let total = 0;
       for (let name in cart) {
           let itemTotal = cart[name].price * cart[name].qty; total += itemTotal;
-          html += `<div style="display:flex; justify-content:space-between; border-bottom:1px dashed #ccc; padding:8px 0; font-size:14px;"><span>${name} x ${cart[name].qty}</span><span>₹${itemTotal}</span></div>`;
+          html += `<div style="display:flex; justify-content:space-between; border-bottom:1px dashed #ccc; padding:8px 0;"><span>${name} x ${cart[name].qty}</span><span>₹${itemTotal}</span></div>`;
       }
-      html += `</div><h3 style="color:black; text-align:right;">Total: ₹${total}</h3><button class="finish-btn" onclick="submitFinal()">CONFIRM ORDER</button><button onclick="document.getElementById('main-modal').style.display='none'" style="background:none; border:none; color:gray; margin-top:10px; cursor:pointer;">Cancel</button>`;
+      html += `</div><h3>Total: ₹${total}</h3><button class="finish-btn" onclick="submitFinal()">CONFIRM ORDER</button><button onclick="document.getElementById('main-modal').style.display='none'" style="background:none; border:none; color:gray; margin-top:10px; cursor:pointer;">Cancel</button>`;
       document.getElementById('modal-content').innerHTML = html;
       document.getElementById('main-modal').style.display = 'flex';
-  }
-
-  async function submitFinal() {
+  };
+  window.submitFinal = async () => {
       let itemsSummary = []; let totalVal = 0;
       for (let name in cart) { totalVal += cart[name].price * cart[name].qty; itemsSummary.push(`${name} (${cart[name].qty})`); }
       const urlParams = new URLSearchParams(window.location.search);
-      let tableNum = urlParams.get('table') || "Counter";
-      
       const orderData = { 
-          customer: customerName || "Guest", 
-          table: tableNum, 
+          customer: customerName, 
+          table: urlParams.get('table') || "Counter", 
           items: itemsSummary.join(", "), 
           total: totalVal, 
           status: "Pending", 
-          timestamp: serverTimestamp(), // ఇది సర్వర్ టైమ్ స్టాంప్ ని పక్కాగా సేవ్ చేస్తుంది
+          timestamp: serverTimestamp(),
           time: new Date().toLocaleString('en-IN') 
       };
-
-      try {
-          await addDoc(collection(db, "orders"), orderData);
-          alert("Order Done! ✅");
-          cart = {}; document.getElementById('main-modal').style.display = 'none'; fetchData(); 
-      } catch (e) { alert("Error!"); }
-  }
-
-  function searchFood() {
+      await addDoc(collection(db, "orders"), orderData);
+      alert("Order Successful! ✅");
+      cart = {}; document.getElementById('main-modal').style.display = 'none'; fetchData();
+  };
+  window.searchFood = () => {
       let query = document.getElementById('search').value.toLowerCase();
       let groups = document.getElementsByClassName('category-group');
-      for (let g of groups) { g.style.display = g.innerText.toLowerCase().includes(query) ? "block" : "none"; }
-  }
-
-  window.startApp = startApp;
-  window.addToCart = addToCart;
-  window.changeQty = changeQty;
-  window.showReceipt = showReceipt;
-  window.submitFinal = submitFinal;
-  window.searchFood = searchFood;
+      for (let g of groups) g.style.display = g.innerText.toLowerCase().includes(query) ? "block" : "none";
+  };
 </script>
 </body>
 </html>
