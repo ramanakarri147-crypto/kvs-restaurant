@@ -18,8 +18,8 @@
         .category-group { margin: 15px; background: #161616; border-radius: 12px; border: 1px solid #222; overflow: hidden; scroll-margin-top: 170px; }
         .category-header { background: #FFD700; color: #000; padding: 10px; font-weight: bold; font-size: 14px; text-transform: uppercase; }
         
-        /* ఇమేజ్ కోసం కొత్త స్టైల్ */
-        .category-img { width: 100%; height: 150px; object-fit: cover; display: block; border-bottom: 2px solid #FFD700; }
+        /* ఇమేజ్ కోసం స్టైల్ */
+        .category-img { width: 100%; height: 180px; object-fit: cover; display: block; border-bottom: 2px solid #FFD700; background: #222; }
 
         .menu-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #222; align-items: center; }
         .food-info b { display: block; font-size: 15px; }
@@ -71,7 +71,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDYOgbu7yfwlSps_-32frEedWss1qmRQoM", 
@@ -105,13 +105,10 @@
       fetchData(); 
   }
 
-  // సెక్టార్లు మరియు మెనూ ఐటమ్స్ రెండింటినీ ఒకేసారి తెచ్చుకుంటున్నాం
   function fetchData() {
-      // 1. సెక్టార్లు (Categories) తెచ్చుకోవడం
       onSnapshot(query(collection(db, "categories"), orderBy("timestamp", "asc")), (snapSectors) => {
-          dynamicSectors = snapSectors.docs.map(doc => ({ id: doc.data().id, name: doc.data().name, image: doc.data().image }));
+          dynamicSectors = snapSectors.docs.map(doc => ({ id: doc.data().id, name: doc.data().name, image: doc.data().imageUrl || doc.data().image }));
           
-          // 2. ఐటమ్స్ తెచ్చుకోవడం
           onSnapshot(collection(db, "menu_items"), (snapItems) => {
               const menuData = snapItems.docs.map(doc => ({ id: doc.id, ...doc.data() }));
               renderUI(menuData);
@@ -130,9 +127,8 @@
           if(items.length > 0) {
               menuHtml += `<div class="category-group" id="${s.id}">`;
               
-              // ఒకవేళ ఫోటో ఉంటే పైన చూపిస్తుంది
               if(s.image) {
-                  menuHtml += `<img src="${s.image}" class="category-img" alt="${s.name}">`;
+                  menuHtml += `<img src="${s.image}" class="category-img" alt="${s.name}" onerror="this.style.display='none'">`;
               }
               
               menuHtml += `<div class="category-header">${s.name}</div>`;
@@ -147,9 +143,7 @@
       document.getElementById('food-list').innerHTML = menuHtml || "<p style='text-align:center; padding:20px;'>మెనూ లోడ్ అవుతోంది...</p>";
       updateCart();
   }
-
-  // --- మిగిలిన పాత లాజిక్ అంతా అలాగే ఉంది (Cart, Submit, Search) ---
-  
+ 
   function addToCart(id, name, price) {
       if (!cart[name]) cart[name] = { id, price, qty: 1 };
       else cart[name].qty++;
@@ -201,7 +195,17 @@
       for (let name in cart) { totalVal += cart[name].price * cart[name].qty; itemsSummary.push(`${name} (${cart[name].qty})`); }
       const urlParams = new URLSearchParams(window.location.search);
       let tableNum = urlParams.get('table') || "Counter";
-      const orderData = { customer: customerName || "Guest", table: tableNum, items: itemsSummary.join(", "), total: totalVal, status: "Pending", time: new Date().toLocaleString('en-IN') };
+      
+      const orderData = { 
+          customer: customerName || "Guest", 
+          table: tableNum, 
+          items: itemsSummary.join(", "), 
+          total: totalVal, 
+          status: "Pending", 
+          timestamp: serverTimestamp(), // ఇది సర్వర్ టైమ్ స్టాంప్ ని పక్కాగా సేవ్ చేస్తుంది
+          time: new Date().toLocaleString('en-IN') 
+      };
+
       try {
           await addDoc(collection(db, "orders"), orderData);
           alert("Order Done! ✅");
