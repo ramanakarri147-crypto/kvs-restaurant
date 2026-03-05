@@ -17,6 +17,10 @@
         .tab-link { background: #222; color: #FFD700; border: 1px solid #FFD700; padding: 6px 15px; border-radius: 20px; text-decoration: none; font-size: 11px; font-weight: bold; white-space: nowrap; }
         .category-group { margin: 15px; background: #161616; border-radius: 12px; border: 1px solid #222; overflow: hidden; scroll-margin-top: 170px; }
         .category-header { background: #FFD700; color: #000; padding: 10px; font-weight: bold; font-size: 14px; text-transform: uppercase; }
+        
+        /* ఇమేజ్ కోసం కొత్త స్టైల్ */
+        .category-img { width: 100%; height: 150px; object-fit: cover; display: block; border-bottom: 2px solid #FFD700; }
+
         .menu-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #222; align-items: center; }
         .food-info b { display: block; font-size: 15px; }
         .food-info span { color: #FFD700; font-weight: bold; }
@@ -67,7 +71,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDYOgbu7yfwlSps_-32frEedWss1qmRQoM", 
@@ -84,12 +88,7 @@
 
   let cart = {};
   let customerName = "";
-  const sectors = [
-      { id: 'vegBiryani', name: 'Veg Biryani' }, { id: 'nonVegBiryani', name: 'Non-Veg Biryani' },
-      { id: 'vegFriedRice', name: 'Veg Fried Rice' }, { id: 'nonVegFriedRice', name: 'Non-Veg Fried Rice' },
-      { id: 'starters', name: 'Starters' }, { id: 'iceCreams', name: 'Ice Creams' },
-      { id: 'coolDrinks', name: 'Cool Drinks' }, { id: 'waterBottle', name: 'Water Bottle' }
-  ];
+  let dynamicSectors = [];
 
   window.addEventListener('load', () => {
       const urlParams = new URLSearchParams(window.location.search);
@@ -103,27 +102,41 @@
       if (customerName.length < 2) return alert("దయచేసి మీ పేరు ఇవ్వండి!");
       document.getElementById('welcome-screen').style.display = 'none';
       document.getElementById('main-menu').style.display = 'block';
-      fetchMenu(); // ఇక్కడ ఆన్‌లైన్ డేటాను పిలుస్తున్నాం
+      fetchData(); 
   }
 
-  // ఆన్‌లైన్ డేటాబేస్ నుండి మెనూ తెచ్చుకునే ఫంక్షన్
-  function fetchMenu() {
-      onSnapshot(collection(db, "menu_items"), (snapshot) => {
-          const menuData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          renderUI(menuData);
+  // సెక్టార్లు మరియు మెనూ ఐటమ్స్ రెండింటినీ ఒకేసారి తెచ్చుకుంటున్నాం
+  function fetchData() {
+      // 1. సెక్టార్లు (Categories) తెచ్చుకోవడం
+      onSnapshot(query(collection(db, "categories"), orderBy("timestamp", "asc")), (snapSectors) => {
+          dynamicSectors = snapSectors.docs.map(doc => ({ id: doc.data().id, name: doc.data().name, image: doc.data().image }));
+          
+          // 2. ఐటమ్స్ తెచ్చుకోవడం
+          onSnapshot(collection(db, "menu_items"), (snapItems) => {
+              const menuData = snapItems.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+              renderUI(menuData);
+          });
       });
   }
 
   function renderUI(menuData) {
       let tabHtml = "";
-      sectors.forEach(s => tabHtml += `<a href="#${s.id}" class="tab-link">${s.name}</a>`);
+      dynamicSectors.forEach(s => tabHtml += `<a href="#${s.id}" class="tab-link">${s.name}</a>`);
       document.getElementById('sector-tabs').innerHTML = tabHtml;
 
       let menuHtml = "";
-      sectors.forEach(s => {
+      dynamicSectors.forEach(s => {
           const items = menuData.filter(item => item.cat === s.id);
           if(items.length > 0) {
-              menuHtml += `<div class="category-group" id="${s.id}"><div class="category-header">${s.name}</div>`;
+              menuHtml += `<div class="category-group" id="${s.id}">`;
+              
+              // ఒకవేళ ఫోటో ఉంటే పైన చూపిస్తుంది
+              if(s.image) {
+                  menuHtml += `<img src="${s.image}" class="category-img" alt="${s.name}">`;
+              }
+              
+              menuHtml += `<div class="category-header">${s.name}</div>`;
+              
               items.forEach(item => {
                   let cleanId = item.id; 
                   menuHtml += `<div class="menu-item"><div class="food-info"><b>${item.name}</b><span>₹${item.price}</span></div><div id="btn-${cleanId}"><button class="add-btn" onclick="addToCart('${cleanId}','${item.name}',${item.price})">ADD</button></div></div>`;
@@ -135,6 +148,8 @@
       updateCart();
   }
 
+  // --- మిగిలిన పాత లాజిక్ అంతా అలాగే ఉంది (Cart, Submit, Search) ---
+  
   function addToCart(id, name, price) {
       if (!cart[name]) cart[name] = { id, price, qty: 1 };
       else cart[name].qty++;
@@ -145,7 +160,7 @@
       cart[name].qty += delta;
       if (cart[name].qty <= 0) { 
           delete cart[name]; 
-          fetchMenu(); // బటన్ మళ్ళీ 'ADD' గా మారడానికి
+          fetchData(); 
       }
       updateCart();
   }
@@ -162,18 +177,10 @@
               btnArea.innerHTML = `<div class="qty-box"><button class="qty-btn" onclick="changeQty('${name}', -1)">-</button><span>${cart[name].qty}</span><button class="qty-btn" onclick="changeQty('${name}', 1)">+</button></div>`; 
           }
       }
-      
       const cartBar = document.getElementById('cartBar');
       const reviewList = document.getElementById('review-list');
-      
-      if(count > 0) {
-          cartBar.style.display = 'flex';
-          reviewList.style.display = 'block';
-          reviewList.innerHTML = `<div style="font-size:10px; color:#FFD700; padding-left:10px;">Selected Items:</div>` + reviewHtml;
-      } else {
-          cartBar.style.display = 'none';
-          reviewList.style.display = 'none';
-      }
+      if(count > 0) { cartBar.style.display = 'flex'; reviewList.style.display = 'block'; reviewList.innerHTML = `<div style="font-size:10px; color:#FFD700; padding-left:10px;">Selected Items:</div>` + reviewHtml; } 
+      else { cartBar.style.display = 'none'; reviewList.style.display = 'none'; }
       document.getElementById('total-val').innerText = `${count} Items | ₹${total}`;
   }
 
@@ -181,43 +188,25 @@
       let html = `<h3 style="color:black; margin-top:0;">Order Bill</h3><div style="text-align:left; margin:15px 0; color:black;">`;
       let total = 0;
       for (let name in cart) {
-          let itemTotal = cart[name].price * cart[name].qty;
-          total += itemTotal;
+          let itemTotal = cart[name].price * cart[name].qty; total += itemTotal;
           html += `<div style="display:flex; justify-content:space-between; border-bottom:1px dashed #ccc; padding:8px 0; font-size:14px;"><span>${name} x ${cart[name].qty}</span><span>₹${itemTotal}</span></div>`;
       }
-      html += `</div><h3 style="color:black; text-align:right;">Total: ₹${total}</h3>`;
-      html += `<button class="finish-btn" onclick="submitFinal()">CONFIRM ORDER</button>`;
-      html += `<button onclick="document.getElementById('main-modal').style.display='none'" style="background:none; border:none; color:gray; margin-top:10px; cursor:pointer;">Cancel</button>`;
+      html += `</div><h3 style="color:black; text-align:right;">Total: ₹${total}</h3><button class="finish-btn" onclick="submitFinal()">CONFIRM ORDER</button><button onclick="document.getElementById('main-modal').style.display='none'" style="background:none; border:none; color:gray; margin-top:10px; cursor:pointer;">Cancel</button>`;
       document.getElementById('modal-content').innerHTML = html;
       document.getElementById('main-modal').style.display = 'flex';
   }
 
   async function submitFinal() {
-      let itemsSummary = [];
-      let totalVal = 0;
-      for (let name in cart) {
-          totalVal += cart[name].price * cart[name].qty;
-          itemsSummary.push(`${name} (${cart[name].qty})`);
-      }
+      let itemsSummary = []; let totalVal = 0;
+      for (let name in cart) { totalVal += cart[name].price * cart[name].qty; itemsSummary.push(`${name} (${cart[name].qty})`); }
       const urlParams = new URLSearchParams(window.location.search);
       let tableNum = urlParams.get('table') || "Counter";
-      const orderData = {
-          customer: customerName || "Guest",
-          table: tableNum,
-          items: itemsSummary.join(", "),
-          total: totalVal,
-          status: "Pending",
-          time: new Date().toLocaleString('en-IN')
-      };
+      const orderData = { customer: customerName || "Guest", table: tableNum, items: itemsSummary.join(", "), total: totalVal, status: "Pending", time: new Date().toLocaleString('en-IN') };
       try {
           await addDoc(collection(db, "orders"), orderData);
-          alert("Order Done! మీ ఆర్డర్ విజయవంతంగా పంపబడింది.");
-          cart = {}; 
-          document.getElementById('main-modal').style.display = 'none';
-          fetchMenu(); 
-      } catch (e) {
-          alert("క్షమించండి, ఆర్డర్ పంపడంలో సమస్య వచ్చింది.");
-      }
+          alert("Order Done! ✅");
+          cart = {}; document.getElementById('main-modal').style.display = 'none'; fetchData(); 
+      } catch (e) { alert("Error!"); }
   }
 
   function searchFood() {
