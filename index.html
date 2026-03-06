@@ -108,6 +108,8 @@
   let dynamicSectors = [];
   let consumedItems = [];
   let totalBillAmount = 0;
+  
+  // --- HOTEL LOCATION (TUNI) ---
   const HOTEL_LAT = 17.345585; 
   const HOTEL_LON = 82.542439;
 
@@ -139,15 +141,11 @@
           if(items.length > 0) {
               let categoryHtml = "";
               let hasVisibleItems = false;
-
               items.forEach(item => {
-                  // --- ఓనర్ హైడ్ చేసిన ఐటమ్ ఇక్కడ ఫిల్టర్ అవుతుంది ---
                   if (item.status === "hidden") return; 
-                  
                   hasVisibleItems = true;
                   categoryHtml += `<div class="menu-item"><div class="food-info"><b>${item.name}</b><span>₹${item.price}</span></div><div id="btn-${item.id}"><button class="add-btn" onclick="addToCart('${item.id}','${item.name}',${item.price})">ADD</button></div></div>`;
               });
-
               if(hasVisibleItems) {
                   menuHtml += `<div class="category-group" id="${s.id}">`;
                   if(s.image) menuHtml += `<img src="${s.image}" class="category-img" alt="${s.name}" onerror="this.style.display='none'">`;
@@ -161,12 +159,14 @@
       updateCart();
   }
 
+  // --- LOCATION CALCULATION LOGIC ---
   function getDistance(lat1, lon1, lat2, lon2) {
       const R = 6371;
       const dLat = (lat2 - lat1) * Math.PI / 180;
       const dLon = (lon2 - lon1) * Math.PI / 180;
       const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-      return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
   }
 
   window.addToCart = (id, name, price) => { if (!cart[name]) cart[name] = { id, price, qty: 1 }; else cart[name].qty++; updateCart(); };
@@ -198,13 +198,30 @@
       document.getElementById('main-modal').style.display = 'flex';
   };
 
+  // --- LOCATION VERIFICATION TRIGGER ---
   window.verifyLocation = () => {
-      const btn = document.getElementById('confirmBtn'); btn.innerText = "Checking Location..."; btn.disabled = true;
+      const btn = document.getElementById('confirmBtn'); 
+      btn.innerText = "Checking Location..."; 
+      btn.disabled = true;
+
+      if (!navigator.geolocation) {
+          alert("మీ ఫోన్ Geolocation సపోర్ట్ చేయడం లేదు!");
+          btn.innerText = "CONFIRM ORDER"; btn.disabled = false;
+          return;
+      }
+
       navigator.geolocation.getCurrentPosition((pos) => {
           const dist = getDistance(pos.coords.latitude, pos.coords.longitude, HOTEL_LAT, HOTEL_LON);
-          if(dist <= 100) submitFinal(); 
-          else { alert("మీరు 100KM లోపు లేరు!"); btn.innerText = "CONFIRM ORDER"; btn.disabled = false; }
-      }, (err) => { alert("Location ON చేయండి!"); btn.innerText = "CONFIRM ORDER"; btn.disabled = false; });
+          if(dist <= 100) {
+              submitFinal(); 
+          } else { 
+              alert("క్షమించండి! మీరు మా రెస్టారెంట్ కి 100KM పరిధిలో లేరు. దూరం: " + dist.toFixed(2) + " KM"); 
+              btn.innerText = "CONFIRM ORDER"; btn.disabled = false; 
+          }
+      }, (err) => { 
+          alert("దయచేసి మీ ఫోన్ లో GPS/Location ఆన్ చేసి పర్మిషన్ ఇవ్వండి!"); 
+          btn.innerText = "CONFIRM ORDER"; btn.disabled = false; 
+      }, { enableHighAccuracy: true });
   };
 
   window.submitFinal = async () => {
@@ -234,13 +251,7 @@
           const now = new Date();
           const dateStr = now.toLocaleDateString('en-IN');
           const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
-          let itemsHtml = consumedItems.map(i => `
-              <div class="receipt-line">
-                  <span>${i.name} (x${i.qty})</span>
-                  <span>₹${i.price}</span>
-              </div>`).join('');
-          
+          let itemsHtml = consumedItems.map(i => `<div class="receipt-line"><span>${i.name} (x${i.qty})</span><span>₹${i.price}</span></div>`).join('');
           receipt.innerHTML = `
               <div class="receipt-header">
                   <div style="font-weight:bold; font-size:20px;">KVS RESTAURANT</div>
@@ -251,14 +262,8 @@
                   <div class="receipt-line"><span>CUST: ${customerName}</span></div>
               </div>
               ${itemsHtml}
-              <div class="receipt-total">
-                  <span>GRAND TOTAL</span>
-                  <span>₹${totalBillAmount}</span>
-              </div>
-              <div class="receipt-footer">
-                  --- Thank You! Visit Again ---<br>
-                  <span style="font-size:9px;">Generated at ${timeStr}</span>
-              </div>
+              <div class="receipt-total"><span>GRAND TOTAL</span><span>₹${totalBillAmount}</span></div>
+              <div class="receipt-footer">--- Thank You! Visit Again ---<br><span style="font-size:9px;">Generated at ${timeStr}</span></div>
           `;
           receipt.scrollIntoView({ behavior: 'smooth' });
       }
