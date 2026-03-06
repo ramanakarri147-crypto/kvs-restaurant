@@ -36,7 +36,6 @@
         .card { background: white; color: black; padding: 20px; border-radius: 15px; width: 85%; max-width: 350px; text-align: center; }
         .finish-btn { background: #25D366; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; margin-top: 15px; cursor: pointer; font-size: 16px; }
 
-        /* --- DMart Style Receipt స్టైల్ --- */
         .receipt-container { 
             background: white; 
             color: black; 
@@ -138,16 +137,27 @@
       dynamicSectors.forEach(s => {
           const items = menuData.filter(item => item.cat === s.id);
           if(items.length > 0) {
-              menuHtml += `<div class="category-group" id="${s.id}">`;
-              if(s.image) menuHtml += `<img src="${s.image}" class="category-img" alt="${s.name}" onerror="this.style.display='none'">`;
-              menuHtml += `<div class="category-header">${s.name}</div>`;
+              let categoryHtml = "";
+              let hasVisibleItems = false;
+
               items.forEach(item => {
-                  menuHtml += `<div class="menu-item"><div class="food-info"><b>${item.name}</b><span>₹${item.price}</span></div><div id="btn-${item.id}"><button class="add-btn" onclick="addToCart('${item.id}','${item.name}',${item.price})">ADD</button></div></div>`;
+                  // --- ఓనర్ హైడ్ చేసిన ఐటమ్ ఇక్కడ ఫిల్టర్ అవుతుంది ---
+                  if (item.status === "hidden") return; 
+                  
+                  hasVisibleItems = true;
+                  categoryHtml += `<div class="menu-item"><div class="food-info"><b>${item.name}</b><span>₹${item.price}</span></div><div id="btn-${item.id}"><button class="add-btn" onclick="addToCart('${item.id}','${item.name}',${item.price})">ADD</button></div></div>`;
               });
-              menuHtml += `</div>`;
+
+              if(hasVisibleItems) {
+                  menuHtml += `<div class="category-group" id="${s.id}">`;
+                  if(s.image) menuHtml += `<img src="${s.image}" class="category-img" alt="${s.name}" onerror="this.style.display='none'">`;
+                  menuHtml += `<div class="category-header">${s.name}</div>`;
+                  menuHtml += categoryHtml;
+                  menuHtml += `</div>`;
+              }
           }
       });
-      document.getElementById('food-list').innerHTML = menuHtml || "<p style='text-align:center;'>Loading...</p>";
+      document.getElementById('food-list').innerHTML = menuHtml || "<p style='text-align:center;'>No items available!</p>";
       updateCart();
   }
 
@@ -217,13 +227,10 @@
       fetchData();
   };
 
-  // --- బిల్లులో Date & Time యాడ్ చేసిన ఫంక్షన్ ---
   function updateDigitalReceipt() {
       const receipt = document.getElementById('digital-receipt');
       if(consumedItems.length > 0) {
           receipt.style.display = 'block';
-          
-          // ప్రస్తుత సమయం మరియు తేదీ తీసుకోవడం
           const now = new Date();
           const dateStr = now.toLocaleDateString('en-IN');
           const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>KVS Admin - Complete Version</title>
     <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Poppins:wght@300;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         html { scroll-behavior: smooth; }
         body { margin: 0; background: #1a1a1a; color: white; font-family: 'Poppins', sans-serif; padding: 15px; }
@@ -30,9 +31,9 @@
         .update-btn { background: #FFD700; border: none; padding: 12px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; color: #000; }
         .view-btn { background: #25D366; color: white; text-decoration: none; display: block; text-align: center; padding: 12px; border-radius: 5px; font-weight: bold; margin-top: 10px; }
         
-        /* Password Eye Icon Styles */
-        .pass-wrapper { position: relative; width: 100%; }
-        .eye-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #FFD700; font-size: 18px; z-index: 10; }
+        /* Eye Icon Style */
+        .eye-toggle { background: none; border: none; color: #FFD700; cursor: pointer; font-size: 16px; padding: 5px; }
+        .item-hidden { opacity: 0.4; } /* హైడ్ చేసిన ఐటమ్ ఓనర్‌కి మసకగా కనిపిస్తుంది */
 
         .live-order-card { background: #282828; padding: 15px; margin-bottom: 12px; border-radius: 10px; border-left: 5px solid #25D366; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
         .order-time { font-size: 11px; color: #FFD700; font-weight: bold; margin-bottom: 5px; }
@@ -112,7 +113,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc, getDocs, addDoc, setDoc, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc, getDocs, addDoc, setDoc, updateDoc, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDYOgbu7yfwlSps_-32frEedWss1qmRQoM", 
@@ -129,7 +130,6 @@
 
     let isFirstLoad = true;
 
-    // 1. వాయిస్ అలర్ట్ (తెలుగు)
     function playVoiceNotification() {
         if (isFirstLoad) return;
         const msg = new SpeechSynthesisUtterance();
@@ -138,7 +138,16 @@
         window.speechSynthesis.speak(msg);
     }
 
-    // 2. హిస్టరీ లో వివరాలు (Date, Time & Customer Name)
+    // --- Eye Icon Toggle Function ---
+    window.toggleVisibility = async (id, currentStatus) => {
+        const newStatus = currentStatus === "hidden" ? "visible" : "hidden";
+        try {
+            await updateDoc(doc(db, "menu_items", id), { status: newStatus });
+        } catch (e) {
+            alert("Error updating visibility!");
+        }
+    };
+
     window.showHistory = async (type) => {
         document.getElementById('mainOptions').style.display = 'none';
         document.getElementById('tablesGrid').style.display = 'none';
@@ -164,7 +173,6 @@
         document.getElementById('historyContent').innerHTML = htm + `</table><h2 style="text-align:right; color:#25D366; margin-top:20px;">Total: ₹${total}</h2>`;
     };
 
-    // 3. లైవ్ ఆర్డర్ లిజనర్ (DATE & TIME అప్‌డేట్ చేసాను)
     onSnapshot(query(collection(db, "orders"), orderBy("timestamp", "desc")), (snap) => {
         const list = document.getElementById('orderList');
         if (!isFirstLoad && snap.docChanges().some(change => change.type === "added")) playVoiceNotification();
@@ -190,20 +198,6 @@
         });
     });
 
-    // 4. Password Visibility Toggle Function
-    window.togglePass = (id) => {
-        const input = document.getElementById(id);
-        const icon = event.target;
-        if (input.type === "password") {
-            input.type = "text";
-            icon.innerText = "🔒"; 
-        } else {
-            input.type = "password";
-            icon.innerText = "👁️";
-        }
-    };
-
-    // మిగతా ఆప్షన్లు
     window.adminSearchFood = () => {
         let q = document.getElementById('adminSearch').value.toLowerCase();
         let cards = document.querySelectorAll('.category-card');
@@ -248,15 +242,32 @@
         onSnapshot(collection(db, "menu_items"), (snap) => {
             document.querySelectorAll('table[id$="T"]').forEach(t => t.innerHTML = "");
             snap.forEach(d => {
-                const it = d.data(); const tbl = document.getElementById(it.cat + 'T');
-                if(tbl) tbl.insertRow().innerHTML = `<td>${it.name}</td><td>₹${it.price}</td><td><button class="del-btn" onclick="deleteDoc(doc(db,'menu_items','${d.id}'))">X</button></td>`;
+                const it = d.data(); 
+                const tbl = document.getElementById(it.cat + 'T');
+                const status = it.status || "visible";
+                const isHidden = status === "hidden";
+                
+                if(tbl) {
+                    const row = tbl.insertRow();
+                    if(isHidden) row.className = "item-hidden";
+                    row.innerHTML = `
+                        <td>${it.name}</td>
+                        <td>₹${it.price}</td>
+                        <td style="text-align:right;">
+                            <button class="eye-toggle" onclick="toggleVisibility('${d.id}', '${status}')">
+                                <i class="fa ${isHidden ? 'fa-eye-slash' : 'fa-eye'}"></i>
+                            </button>
+                            <button class="del-btn" style="float:none; margin-left:10px;" onclick="deleteDoc(doc(db,'menu_items','${d.id}'))">X</button>
+                        </td>`;
+                }
             });
         });
     }
 
     window.updateMenu = async () => {
         const name = document.getElementById('itemName').value, price = document.getElementById('itemPrice').value, cat = document.getElementById('categorySelect').value;
-        if(name && price) await addDoc(collection(db, "menu_items"), { name, price: Number(price), cat });
+        if(name && price) await addDoc(collection(db, "menu_items"), { name, price: Number(price), cat, status: "visible" });
+        document.getElementById('itemName').value = ""; document.getElementById('itemPrice').value = "";
     };
 
     window.openSettings = () => { document.getElementById('settingsModal').style.display = 'block'; backToSettings(); };
@@ -275,7 +286,7 @@
         for(let i=1; i<=50; i++) grid.innerHTML += `<div class="table-btn" onclick="window.showHistory(${i})">T-${i}</div>`;
     };
     
-    window.deleteDoc = deleteDoc; window.doc = doc; window.db = db;
+    window.deleteDoc = deleteDoc; window.doc = doc; window.db = db; window.toggleVisibility = toggleVisibility;
 </script>
 </body>
 </html>
