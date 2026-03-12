@@ -11,42 +11,30 @@
         .header { text-align: center; border-bottom: 2px solid #FFD700; padding-bottom: 10px; margin-bottom: 10px; position: relative; }
         .hotel-name { font-family: 'Righteous', cursive; font-size: 28px; color: #FFD700; text-transform: uppercase; }
         .settings-btn { position: absolute; right: 0px; top: 5px; font-size: 22px; cursor: pointer; color: #FFD700; border: 1px solid #FFD700; padding: 5px 10px; border-radius: 50%; }
-        
         .search-container { margin: 10px 0; text-align: center; }
         .search-input { width: 95%; padding: 12px; border-radius: 25px; border: 1px solid #FFD700; background: #333; color: white; outline: none; }
-
         .tabs-sector { display: flex; overflow-x: auto; gap: 10px; padding: 10px 0; position: sticky; top: 0; background: #1a1a1a; z-index: 1000; scrollbar-width: none; border-bottom: 1px solid #333; }
         .sector-btn { background: transparent; color: #FFD700; border: 1px solid #FFD700; padding: 8px 15px; border-radius: 20px; white-space: nowrap; cursor: pointer; font-size: 13px; font-weight: bold; text-decoration: none; }
-        
         .container { display: flex; flex-direction: column; gap: 20px; }
         @media (min-width: 768px) { .container { flex-direction: row; } }
-
         .left-box { flex: 1; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; border: 1px solid #444; height: fit-content; position: sticky; top: 70px; }
         .right-box { flex: 2; }
-        
         .category-card { background: #222; padding: 10px; border-radius: 10px; border-left: 5px solid #FFD700; margin-bottom: 20px; }
         .category-card img { width: 100%; height: 160px; object-fit: cover; border-radius: 8px; margin-bottom: 10px; }
-        
         input, select { width: 100%; padding: 10px; margin: 8px 0; border-radius: 5px; border: 1px solid #555; background: #333; color: white; box-sizing: border-box; }
         .update-btn { background: #FFD700; border: none; padding: 12px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; color: #000; }
         .view-btn { background: #25D366; color: white; text-decoration: none; display: block; text-align: center; padding: 12px; border-radius: 5px; font-weight: bold; margin-top: 10px; }
-        
         .live-order-card { background: #282828; padding: 15px; margin-bottom: 12px; border-radius: 10px; border-left: 5px solid #25D366; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
         .del-btn { background: #ff4444; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; float: right; font-weight: bold; }
-        
-        /* --- Floating Bill Icon & Modal Styles --- */
         .bill-fab { position: fixed; bottom: 30px; right: 30px; background: #FFD700; color: #000; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 25px; cursor: pointer; z-index: 4000; box-shadow: 0 5px 15px rgba(0,0,0,0.5); animation: pulse 2s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
-        
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 5000; padding: 15px; overflow-y: auto; }
         .modal-content { max-width: 500px; margin: auto; background: #1a1a1a; padding: 20px; border-radius: 15px; border: 1.5px solid #FFD700; position: relative; }
-        
         .dmart-bill { background: white; color: black; padding: 15px; margin-bottom: 20px; font-family: 'Courier New', monospace; border-radius: 2px; }
         .dmart-header { text-align: center; border-bottom: 1px dashed black; padding-bottom: 5px; margin-bottom: 10px; }
         .dmart-row { display: flex; justify-content: space-between; font-size: 13px; margin: 3px 0; }
         .dmart-total { border-top: 1px dashed black; padding-top: 5px; margin-top: 10px; font-weight: bold; font-size: 16px; display: flex; justify-content: space-between; }
         .print-btn-mini { background: #25D366; color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; }
-
         .grid-50 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 15px; }
         .table-btn { background: #333; color: #FFD700; border: 1px solid #FFD700; padding: 10px; border-radius: 5px; cursor: pointer; text-align: center; font-weight: bold; }
         .menu-option { background: #333; padding: 15px; margin: 10px 0; border-radius: 8px; cursor: pointer; text-align: center; color: #FFD700; font-weight: bold; border: 1px solid #444; font-size: 16px; }
@@ -120,7 +108,6 @@
         <select id="categorySelect"></select>
         <button class="update-btn" onclick="updateMenu()">ADD TO MENU</button>
         <a href="index.html" class="view-btn" target="_blank">VIEW CUSTOMER PAGE</a>
-        
         <h4 style="color:#25D366; border-top:1px solid #444; padding-top:15px; margin-top:25px;">📥 LIVE ORDERS</h4>
         <div id="orderList"></div>
     </div>
@@ -142,39 +129,25 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const IMGBB_KEY = "88c8d1427e7d391a5c87ffd3134463f1";
 
-    // --- Modal Control ---
-    window.openBillModal = () => document.getElementById('billModal').style.display = 'block';
-    window.closeBillModal = () => document.getElementById('billModal').style.display = 'none';
+    // నిష్క్రమించే ముందు ఈ వేరియబుల్స్ గ్లోబల్ గా సెట్ చేస్తున్నాం
+    window.db = db;
+    window.deleteDoc = deleteDoc;
+    window.doc = doc;
 
-    // --- Print Logic ---
-    window.printThermalBill = (billData) => {
-        const stars = "⭐".repeat(Number(billData.rating));
-        const pWin = window.open('', '', 'width=400,height=600');
-        pWin.document.write(`<html><body style="font-family:'Courier New',monospace; width:80mm; padding:10px; color:black;" onload="window.print();window.close();">
-            <div style="text-align:center;"><h2>KVS RUCHULU</h2><p>Tuni, East Godavari</p><hr style="border-top:1px dashed black;"></div>
-            <div style="font-size:12px;">DATE: ${new Date().toLocaleDateString()} | TIME: ${billData.time}<br>TABLE: T-${billData.table} | CUST: ${billData.customer}</div>
-            <hr style="border-top:1px dashed black;"><div style="font-size:13px; min-height:50px;">${billData.items.split(',').join('<br>')}</div>
-            <hr style="border-top:1px dashed black;"><div style="display:flex; justify-content:space-between; font-weight:bold; font-size:17px;"><span>TOTAL:</span><span>₹${billData.total}</span></div>
-            <hr style="border-top:1px dashed black;"><div style="text-align:center;">RATING: ${stars}<br><b>Thank You! Visit Again</b></div>
-        </body></html>`);
-        pWin.document.close();
-    };
-
-    // --- History & Sales Logic (Fixed) ---
+    // --- History Logic Fixed ---
     window.showHistory = async (type) => {
         document.getElementById('mainOptions').style.display = 'none';
         document.getElementById('tablesGrid').style.display = 'none';
         document.getElementById('historyResult').style.display = 'block';
         const snap = await getDocs(query(collection(db, "orders"), orderBy("timestamp", "desc")));
         let total = 0;
-        let htm = `<h3 style="color:#FFD700; text-align:center;">${type === 'all' ? 'Total Sales' : 'Table ' + type} Report</h3><table><tr><th>Date/Time</th><th>Table</th><th>Bill</th></tr>`;
+        let htm = `<h3 style="color:#FFD700; text-align:center;">${type === 'all' ? 'Total Sales' : 'Table ' + type} Report</h3><table><tr><th>Time</th><th>Table</th><th>Bill</th></tr>`;
         snap.forEach(d => {
             const o = d.data();
             if(type === 'all' || o.table == type) {
-                let dtStr = o.timestamp ? o.timestamp.toDate().toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : "N/A";
-                htm += `<tr><td>${dtStr}</td><td>T-${o.table}</td><td>₹${o.total}</td></tr>`;
+                let time = o.timestamp ? o.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "N/A";
+                htm += `<tr><td>${time}</td><td>T-${o.table}</td><td>₹${o.total}</td></tr>`;
                 total += Number(o.total);
             }
         });
@@ -182,43 +155,29 @@
     };
 
     window.showTablesGrid = () => {
-        document.getElementById('mainOptions').style.display = 'none'; document.getElementById('tablesGrid').style.display = 'block';
-        const grid = document.getElementById('gridContainer'); grid.innerHTML = "";
-        for(let i=1; i<=50; i++) grid.innerHTML += `<div class="table-btn" onclick="window.showHistory(${i})">T-${i}</div>`;
+        document.getElementById('mainOptions').style.display = 'none';
+        document.getElementById('tablesGrid').style.display = 'block';
+        const grid = document.getElementById('gridContainer');
+        grid.innerHTML = "";
+        for(let i=1; i<=50; i++) {
+            const btn = document.createElement('div');
+            btn.className = "table-btn";
+            btn.innerText = `T-${i}`;
+            btn.onclick = () => window.showHistory(i);
+            grid.appendChild(btn);
+        }
     };
 
     // --- Snapshot Listeners ---
-    onSnapshot(query(collection(db, "owner_bills"), orderBy("timestamp", "desc")), (snap) => {
-        const container = document.getElementById('customerBillList');
-        container.innerHTML = snap.empty ? "<p style='text-align:center; color:gray;'>కొత్త బిల్లులు లేవు...</p>" : "";
-        snap.forEach(d => {
-            const bill = d.data();
-            const billDiv = document.createElement('div');
-            billDiv.className = "dmart-bill";
-            billDiv.innerHTML = `<div class="dmart-header"><b>KVS RUCHULU</b><br><small>${bill.time}</small></div>
-                <div class="dmart-row"><span>TABLE:</span><b>T-${bill.table}</b></div>
-                <div class="dmart-row"><span>CUST:</span><b>${bill.customer}</b></div>
-                <div style="margin:8px 0; font-size:12px; border-bottom:0.5px solid #eee;">${bill.items}</div>
-                <div class="dmart-total"><span>TOTAL:</span><span>₹${bill.total}</span></div>
-                <button class="print-btn-mini" id="btn-${d.id}"><i class="fas fa-print"></i> PRINT & CLEAR</button>`;
-            container.appendChild(billDiv);
-            document.getElementById(`btn-${d.id}`).onclick = async () => { window.printThermalBill(bill); await deleteDoc(doc(db, "owner_bills", d.id)); };
-        });
-    });
-
-    let isFirstLoad = true;
     onSnapshot(query(collection(db, "orders"), orderBy("timestamp", "desc")), (snap) => {
         const list = document.getElementById('orderList');
-        if (!isFirstLoad && snap.docChanges().some(change => change.type === "added")) {
-            const msg = new SpeechSynthesisUtterance("మీకు కొత్త ఆర్డర్ వచ్చింది చూడండి బ్రో");
-            msg.lang = 'te-IN'; window.speechSynthesis.speak(msg);
-        }
-        isFirstLoad = false; list.innerHTML = "";
+        list.innerHTML = "";
         snap.forEach(d => {
             const ord = d.data();
-            list.innerHTML += `<div class="live-order-card"><button class="del-btn" onclick="deleteDoc(doc(db,'orders','${d.id}'))">Done</button>
-                <b style="font-size:16px;">T-${ord.table} | ${ord.customer}</b><br><small style="color:#ccc;">${ord.items}</small><br>
-                <b style="color:#25D366; font-size:18px;">₹${ord.total}</b></div>`;
+            list.innerHTML += `<div class="live-order-card">
+                <button class="del-btn" onclick="deleteDoc(doc(db,'orders','${d.id}'))">Done</button>
+                <b>T-${ord.table} | ${ord.customer}</b><br><small>${ord.items}</small><br>
+                <b style="color:#25D366;">₹${ord.total}</b></div>`;
         });
     });
 
@@ -242,24 +201,16 @@
             snap.forEach(d => {
                 const it = d.data(); const tbl = document.getElementById(it.cat + 'T');
                 if(tbl) {
-                    const status = it.status || "visible"; const isHidden = status === "hidden";
-                    const row = tbl.insertRow(); if(isHidden) row.className = "item-hidden";
-                    row.innerHTML = `<td>${it.name}</td><td>₹${it.price}</td><td style="text-align:right;">
-                        <button class="eye-toggle" onclick="toggleVisibility('${d.id}', '${status}')"><i class="fa ${isHidden ? 'fa-eye-slash' : 'fa-eye'}"></i></button>
-                        <button class="del-btn" style="float:none; margin-left:10px;" onclick="deleteDoc(doc(db,'menu_items','${d.id}'))">X</button></td>`;
+                    const row = tbl.insertRow();
+                    row.innerHTML = `<td>${it.name}</td><td>₹${it.price}</td><td style="text-align:right;"><button class="del-btn" onclick="deleteDoc(doc(db,'menu_items','${d.id}'))">X</button></td>`;
                 }
             });
         });
     }
 
-    // --- Other Functions ---
-    window.toggleVisibility = async (id, currentStatus) => {
-        await updateDoc(doc(db, "menu_items", id), { status: currentStatus === "hidden" ? "visible" : "hidden" });
-    };
-
     window.updateMenu = async () => {
         const name = document.getElementById('itemName').value, price = document.getElementById('itemPrice').value, cat = document.getElementById('categorySelect').value;
-        if(name && price) await addDoc(collection(db, "menu_items"), { name, price: Number(price), cat, status: "visible" });
+        if(name && price) await addDoc(collection(db, "menu_items"), { name, price: Number(price), cat });
         document.getElementById('itemName').value = ""; document.getElementById('itemPrice').value = "";
     };
 
@@ -268,14 +219,8 @@
     window.backToSettings = () => {
         document.getElementById('mainOptions').style.display = 'block';
         ['sectorManager', 'tablesGrid', 'historyResult'].forEach(id => document.getElementById(id).style.display = 'none');
-        document.getElementById('modalTitle').innerText = "Admin Settings";
     };
     window.showSectorManager = () => { document.getElementById('mainOptions').style.display = 'none'; document.getElementById('sectorManager').style.display = 'block'; };
-
-    window.adminSearchFood = () => {
-        let q = document.getElementById('adminSearch').value.toLowerCase();
-        document.querySelectorAll('.category-card').forEach(c => c.style.display = c.innerText.toLowerCase().includes(q) ? "block" : "none");
-    };
 
     window.clearAllHistory = async () => {
         if(confirm("సేల్స్ హిస్టరీ మొత్తం డిలీట్ చేయాలా?")) {
@@ -284,19 +229,6 @@
             alert("History Reset Done! ✅");
         }
     };
-
-    window.addNewSector = async () => {
-        const name = document.getElementById('newSectorName').value, file = document.getElementById('newSectorImage').files[0];
-        if(!name || !file) return alert("Please select name and image!");
-        const btn = document.getElementById('addBtn'); btn.innerText = "Uploading...";
-        const fd = new FormData(); fd.append("image", file);
-        const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method: "POST", body: fd });
-        const data = await res.json();
-        await setDoc(doc(db, "categories", name.toLowerCase().replace(/\s+/g, '')), { name, id: name.toLowerCase().replace(/\s+/g, ''), image: data.data.url, timestamp: serverTimestamp() });
-        btn.innerText = "UPLOAD NEW SECTOR";
-    };
-
-    window.deleteDoc = deleteDoc; window.doc = doc; window.db = db;
 </script>
 </body>
 </html>
