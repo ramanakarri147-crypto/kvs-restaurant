@@ -109,7 +109,6 @@
   let consumedItems = [];
   let totalBillAmount = 0;
   
-  // --- HOTEL LOCATION (TUNI) ---
   const HOTEL_LAT = 17.345585; 
   const HOTEL_LON = 82.542439;
 
@@ -159,7 +158,6 @@
       updateCart();
   }
 
-  // --- LOCATION CALCULATION LOGIC ---
   function getDistance(lat1, lon1, lat2, lon2) {
       const R = 6371;
       const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -198,18 +196,15 @@
       document.getElementById('main-modal').style.display = 'flex';
   };
 
-  // --- LOCATION VERIFICATION TRIGGER ---
   window.verifyLocation = () => {
       const btn = document.getElementById('confirmBtn'); 
       btn.innerText = "Checking Location..."; 
       btn.disabled = true;
-
       if (!navigator.geolocation) {
           alert("మీ ఫోన్ Geolocation సపోర్ట్ చేయడం లేదు!");
           btn.innerText = "CONFIRM ORDER"; btn.disabled = false;
           return;
       }
-
       navigator.geolocation.getCurrentPosition((pos) => {
           const dist = getDistance(pos.coords.latitude, pos.coords.longitude, HOTEL_LAT, HOTEL_LON);
           if(dist <= 100) {
@@ -263,11 +258,42 @@
               </div>
               ${itemsHtml}
               <div class="receipt-total"><span>GRAND TOTAL</span><span>₹${totalBillAmount}</span></div>
+              
+              <div id="rating-container" style="margin-top:20px; text-align:center; padding:10px; border-top:1px dashed #000;">
+                <p style="font-weight:bold; margin-bottom:5px;">మా ఆహారంపై మీ అభిప్రాయం (Rating):</p>
+                <select id="food-rating" style="width:100%; padding:10px; border-radius:5px; border:1px solid #ccc; font-size:14px;">
+                    <option value="5">⭐⭐⭐⭐⭐ (Excellent)</option>
+                    <option value="4">⭐⭐⭐⭐ (Good)</option>
+                    <option value="3">⭐⭐⭐ (Average)</option>
+                    <option value="2">⭐⭐ (Poor)</option>
+                    <option value="1">⭐ (Bad)</option>
+                </select>
+                <button onclick="finalSubmitToOwner()" class="finish-btn" style="margin-top:10px;">ORDER DONE ✔️</button>
+              </div>
+
               <div class="receipt-footer">--- Thank You! Visit Again ---<br><span style="font-size:9px;">Generated at ${timeStr}</span></div>
           `;
           receipt.scrollIntoView({ behavior: 'smooth' });
       }
   }
+
+  window.finalSubmitToOwner = async () => {
+    const ratingValue = document.getElementById('food-rating').value;
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    await addDoc(collection(db, "owner_bills"), {
+        customer: customerName,
+        table: urlParams.get('table') || "Counter",
+        items: consumedItems.map(i => `${i.name} (${i.qty})`).join(", "),
+        total: totalBillAmount,
+        rating: ratingValue,
+        timestamp: serverTimestamp(),
+        time: new Date().toLocaleString('en-IN')
+    });
+
+    alert("మీ ఆర్డర్ సక్సెస్‌ఫుల్ గా పూర్తి అయ్యింది! బిల్లు మరియు రేటింగ్ ఓనర్ కి పంపబడింది. ✅");
+    document.getElementById('rating-container').innerHTML = `<h4 style="color:green; padding:10px;">ఆర్డర్ పూర్తయింది. ధన్యవాదాలు!</h4>`;
+  };
 
   window.startApp = startApp;
   window.searchFood = () => {

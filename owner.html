@@ -31,23 +31,30 @@
         .update-btn { background: #FFD700; border: none; padding: 12px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; color: #000; }
         .view-btn { background: #25D366; color: white; text-decoration: none; display: block; text-align: center; padding: 12px; border-radius: 5px; font-weight: bold; margin-top: 10px; }
         
-        /* Eye Icon Style */
-        .eye-toggle { background: none; border: none; color: #FFD700; cursor: pointer; font-size: 16px; padding: 5px; }
-        .item-hidden { opacity: 0.4; } /* హైడ్ చేసిన ఐటమ్ ఓనర్‌కి మసకగా కనిపిస్తుంది */
-
         .live-order-card { background: #282828; padding: 15px; margin-bottom: 12px; border-radius: 10px; border-left: 5px solid #25D366; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
-        .order-time { font-size: 11px; color: #FFD700; font-weight: bold; margin-bottom: 5px; }
         .del-btn { background: #ff4444; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; float: right; font-weight: bold; }
         
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; padding: 15px; overflow-y: auto; }
-        .modal-content { max-width: 700px; margin: auto; background: #1a1a1a; padding: 20px; border-radius: 15px; border: 1.5px solid #FFD700; }
+        /* --- Floating Bill Icon & Modal Styles --- */
+        .bill-fab { position: fixed; bottom: 30px; right: 30px; background: #FFD700; color: #000; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 25px; cursor: pointer; z-index: 4000; box-shadow: 0 5px 15px rgba(0,0,0,0.5); animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 5000; padding: 15px; overflow-y: auto; }
+        .modal-content { max-width: 500px; margin: auto; background: #1a1a1a; padding: 20px; border-radius: 15px; border: 1.5px solid #FFD700; position: relative; }
+        
+        .dmart-bill { background: white; color: black; padding: 15px; margin-bottom: 20px; font-family: 'Courier New', monospace; border-radius: 2px; }
+        .dmart-header { text-align: center; border-bottom: 1px dashed black; padding-bottom: 5px; margin-bottom: 10px; }
+        .dmart-row { display: flex; justify-content: space-between; font-size: 13px; margin: 3px 0; }
+        .dmart-total { border-top: 1px dashed black; padding-top: 5px; margin-top: 10px; font-weight: bold; font-size: 16px; display: flex; justify-content: space-between; }
+        .print-btn-mini { background: #25D366; color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; }
+
         .grid-50 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 15px; }
         .table-btn { background: #333; color: #FFD700; border: 1px solid #FFD700; padding: 10px; border-radius: 5px; cursor: pointer; text-align: center; font-weight: bold; }
         .menu-option { background: #333; padding: 15px; margin: 10px 0; border-radius: 8px; cursor: pointer; text-align: center; color: #FFD700; font-weight: bold; border: 1px solid #444; font-size: 16px; }
-        
         table { width: 100%; border-collapse: collapse; color: white; margin-top: 10px; }
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid #333; font-size: 13px; }
         th { color: #FFD700; text-transform: uppercase; }
+        .eye-toggle { background: none; border: none; color: #FFD700; cursor: pointer; font-size: 16px; padding: 5px; }
+        .item-hidden { opacity: 0.4; }
     </style>
 </head>
 <body>
@@ -61,32 +68,41 @@
     <input type="text" id="adminSearch" class="search-input" placeholder="మెనూ ఐటమ్ వెతకండి..." onkeyup="adminSearchFood()">
 </div>
 
+<div class="bill-fab" onclick="openBillModal()">
+    <i class="fas fa-file-invoice-dollar"></i>
+</div>
+
+<div id="billModal" class="modal">
+    <div class="modal-content">
+        <button onclick="closeBillModal()" style="position:absolute; right:15px; top:15px; background:red; color:white; border:none; padding:5px 10px; cursor:pointer; border-radius:5px;">X</button>
+        <h2 style="color:#FFD700; text-align:center; margin-bottom:20px;">Customer Bills</h2>
+        <div id="customerBillList">
+            <p style="color:gray; text-align:center;">కొత్త బిల్లులు లేవు...</p>
+        </div>
+    </div>
+</div>
+
 <div id="settingsModal" class="modal">
     <div class="modal-content">
         <button onclick="closeSettings()" style="float:right; background:red; color:white; border:none; padding:5px 10px; cursor:pointer; border-radius:5px;">X</button>
         <h2 id="modalTitle" style="color:#FFD700; text-align:center;">Admin Settings</h2>
-        
         <div id="mainOptions">
             <div class="menu-option" onclick="showSectorManager()">📁 Manage Categories (Sectors)</div>
-            <div class="menu-option" onclick="showTablesGrid()">🪑 Table-wise History (1-50)</div>
+            <div class="menu-option" onclick="window.showTablesGrid()">🪑 Table-wise History (1-50)</div>
             <div class="menu-option" onclick="window.showHistory('all')" style="background:#25D366; color:white;">💰 View Total Sales (All)</div>
             <div class="menu-option" onclick="window.clearAllHistory()" style="background:#ff4444; color:white;">⚠️ Reset Sales History</div>
         </div>
-
         <div id="sectorManager" style="display:none;">
             <button onclick="backToSettings()" style="background:#555; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer; margin-bottom: 10px;">⬅ Back</button>
-            <input type="text" id="newSectorName" placeholder="Category Name (Ex: Biryani)">
+            <input type="text" id="newSectorName" placeholder="Category Name">
             <input type="file" id="newSectorImage" accept="image/*">
-            <button id="addBtn" onclick="window.addNewSector()" style="background:#FFD700; border:none; padding:12px; width:100%; border-radius:5px; font-weight:bold;">UPLOAD NEW SECTOR</button>
+            <button id="addBtn" onclick="window.addNewSector()" class="update-btn">UPLOAD NEW SECTOR</button>
             <div id="sectorList" style="margin-top:20px;"></div>
         </div>
-
         <div id="tablesGrid" style="display:none;">
             <button onclick="backToSettings()" style="background:#555; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">⬅ Back</button>
-            <h3 style="color:#FFD700; text-align:center;">Select Table</h3>
             <div class="grid-50" id="gridContainer"></div>
         </div>
-
         <div id="historyResult" style="display:none;">
             <button onclick="backToSettings()" style="background:#555; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer; margin-top:10px;">⬅ Back</button>
             <div id="historyContent"></div>
@@ -128,101 +144,83 @@
     const db = getFirestore(app);
     const IMGBB_KEY = "88c8d1427e7d391a5c87ffd3134463f1";
 
-    let isFirstLoad = true;
+    // --- Modal Control ---
+    window.openBillModal = () => document.getElementById('billModal').style.display = 'block';
+    window.closeBillModal = () => document.getElementById('billModal').style.display = 'none';
 
-    function playVoiceNotification() {
-        if (isFirstLoad) return;
-        const msg = new SpeechSynthesisUtterance();
-        msg.text = "మీకు కొత్త ఆర్డర్ వచ్చింది చూడండి బ్రో";
-        msg.lang = 'te-IN';
-        window.speechSynthesis.speak(msg);
-    }
-
-    // --- Eye Icon Toggle Function ---
-    window.toggleVisibility = async (id, currentStatus) => {
-        const newStatus = currentStatus === "hidden" ? "visible" : "hidden";
-        try {
-            await updateDoc(doc(db, "menu_items", id), { status: newStatus });
-        } catch (e) {
-            alert("Error updating visibility!");
-        }
+    // --- Print Logic ---
+    window.printThermalBill = (billData) => {
+        const stars = "⭐".repeat(Number(billData.rating));
+        const pWin = window.open('', '', 'width=400,height=600');
+        pWin.document.write(`<html><body style="font-family:'Courier New',monospace; width:80mm; padding:10px; color:black;" onload="window.print();window.close();">
+            <div style="text-align:center;"><h2>KVS RUCHULU</h2><p>Tuni, East Godavari</p><hr style="border-top:1px dashed black;"></div>
+            <div style="font-size:12px;">DATE: ${new Date().toLocaleDateString()} | TIME: ${billData.time}<br>TABLE: T-${billData.table} | CUST: ${billData.customer}</div>
+            <hr style="border-top:1px dashed black;"><div style="font-size:13px; min-height:50px;">${billData.items.split(',').join('<br>')}</div>
+            <hr style="border-top:1px dashed black;"><div style="display:flex; justify-content:space-between; font-weight:bold; font-size:17px;"><span>TOTAL:</span><span>₹${billData.total}</span></div>
+            <hr style="border-top:1px dashed black;"><div style="text-align:center;">RATING: ${stars}<br><b>Thank You! Visit Again</b></div>
+        </body></html>`);
+        pWin.document.close();
     };
 
+    // --- History & Sales Logic (Fixed) ---
     window.showHistory = async (type) => {
         document.getElementById('mainOptions').style.display = 'none';
         document.getElementById('tablesGrid').style.display = 'none';
         document.getElementById('historyResult').style.display = 'block';
-        
         const snap = await getDocs(query(collection(db, "orders"), orderBy("timestamp", "desc")));
         let total = 0;
-        let htm = `<h3 style="color:#FFD700; text-align:center;">${type === 'all' ? 'Total Sales' : 'Table ' + type} Report</h3>
-                   <table><tr><th>Date/Time</th><th>Table (Name)</th><th>Bill</th></tr>`;
-        
+        let htm = `<h3 style="color:#FFD700; text-align:center;">${type === 'all' ? 'Total Sales' : 'Table ' + type} Report</h3><table><tr><th>Date/Time</th><th>Table</th><th>Bill</th></tr>`;
         snap.forEach(d => {
             const o = d.data();
             if(type === 'all' || o.table == type) {
-                let dtStr = "N/A";
-                if(o.timestamp) {
-                    const dt = o.timestamp.toDate();
-                    dtStr = dt.toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-                }
-                htm += `<tr><td>${dtStr}</td><td>T-${o.table} (${o.customer || 'Guest'})</td><td>₹${o.total}</td></tr>`;
+                let dtStr = o.timestamp ? o.timestamp.toDate().toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : "N/A";
+                htm += `<tr><td>${dtStr}</td><td>T-${o.table}</td><td>₹${o.total}</td></tr>`;
                 total += Number(o.total);
             }
         });
         document.getElementById('historyContent').innerHTML = htm + `</table><h2 style="text-align:right; color:#25D366; margin-top:20px;">Total: ₹${total}</h2>`;
     };
 
-    onSnapshot(query(collection(db, "orders"), orderBy("timestamp", "desc")), (snap) => {
-        const list = document.getElementById('orderList');
-        if (!isFirstLoad && snap.docChanges().some(change => change.type === "added")) playVoiceNotification();
-        isFirstLoad = false;
-        list.innerHTML = "";
-        snap.forEach(d => {
-            const ord = d.data();
-            let dateTimeStr = "";
-            if(ord.timestamp) {
-                const dt = ord.timestamp.toDate();
-                dateTimeStr = dt.toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true });
-            } else {
-                dateTimeStr = "Processing...";
-            }
+    window.showTablesGrid = () => {
+        document.getElementById('mainOptions').style.display = 'none'; document.getElementById('tablesGrid').style.display = 'block';
+        const grid = document.getElementById('gridContainer'); grid.innerHTML = "";
+        for(let i=1; i<=50; i++) grid.innerHTML += `<div class="table-btn" onclick="window.showHistory(${i})">T-${i}</div>`;
+    };
 
-            list.innerHTML += `<div class="live-order-card">
-                <button class="del-btn" onclick="deleteDoc(doc(db,'orders','${d.id}'))">Done</button>
-                <div class="order-time">📅 ${dateTimeStr}</div>
-                <b style="font-size:16px;">T-${ord.table} | ${ord.customer}</b><br>
-                <small style="color:#ccc;">${ord.items}</small><br>
-                <b style="color:#25D366; font-size:18px;">₹${ord.total}</b>
-            </div>`;
+    // --- Snapshot Listeners ---
+    onSnapshot(query(collection(db, "owner_bills"), orderBy("timestamp", "desc")), (snap) => {
+        const container = document.getElementById('customerBillList');
+        container.innerHTML = snap.empty ? "<p style='text-align:center; color:gray;'>కొత్త బిల్లులు లేవు...</p>" : "";
+        snap.forEach(d => {
+            const bill = d.data();
+            const billDiv = document.createElement('div');
+            billDiv.className = "dmart-bill";
+            billDiv.innerHTML = `<div class="dmart-header"><b>KVS RUCHULU</b><br><small>${bill.time}</small></div>
+                <div class="dmart-row"><span>TABLE:</span><b>T-${bill.table}</b></div>
+                <div class="dmart-row"><span>CUST:</span><b>${bill.customer}</b></div>
+                <div style="margin:8px 0; font-size:12px; border-bottom:0.5px solid #eee;">${bill.items}</div>
+                <div class="dmart-total"><span>TOTAL:</span><span>₹${bill.total}</span></div>
+                <button class="print-btn-mini" id="btn-${d.id}"><i class="fas fa-print"></i> PRINT & CLEAR</button>`;
+            container.appendChild(billDiv);
+            document.getElementById(`btn-${d.id}`).onclick = async () => { window.printThermalBill(bill); await deleteDoc(doc(db, "owner_bills", d.id)); };
         });
     });
 
-    window.adminSearchFood = () => {
-        let q = document.getElementById('adminSearch').value.toLowerCase();
-        let cards = document.querySelectorAll('.category-card');
-        cards.forEach(c => c.style.display = c.innerText.toLowerCase().includes(q) ? "block" : "none");
-    };
-
-    window.clearAllHistory = async () => {
-        if(confirm("సేల్స్ హిస్టరీ మొత్తం డిలీట్ చేయాలా?")) {
-            const snap = await getDocs(collection(db, "orders"));
-            const batch = writeBatch(db); snap.forEach(d => batch.delete(d.ref)); await batch.commit();
-            alert("History Reset Done! ✅");
+    let isFirstLoad = true;
+    onSnapshot(query(collection(db, "orders"), orderBy("timestamp", "desc")), (snap) => {
+        const list = document.getElementById('orderList');
+        if (!isFirstLoad && snap.docChanges().some(change => change.type === "added")) {
+            const msg = new SpeechSynthesisUtterance("మీకు కొత్త ఆర్డర్ వచ్చింది చూడండి బ్రో");
+            msg.lang = 'te-IN'; window.speechSynthesis.speak(msg);
         }
-    };
-
-    window.addNewSector = async () => {
-        const name = document.getElementById('newSectorName').value, file = document.getElementById('newSectorImage').files[0];
-        if(!name || !file) return alert("Please select name and image!");
-        const btn = document.getElementById('addBtn'); btn.innerText = "Uploading...";
-        const fd = new FormData(); fd.append("image", file);
-        const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method: "POST", body: fd });
-        const data = await res.json();
-        const id = name.toLowerCase().replace(/\s+/g, '');
-        await setDoc(doc(db, "categories", id), { name, id, image: data.data.url, timestamp: serverTimestamp() });
-        btn.innerText = "UPLOAD NEW SECTOR";
-    };
+        isFirstLoad = false; list.innerHTML = "";
+        snap.forEach(d => {
+            const ord = d.data();
+            list.innerHTML += `<div class="live-order-card"><button class="del-btn" onclick="deleteDoc(doc(db,'orders','${d.id}'))">Done</button>
+                <b style="font-size:16px;">T-${ord.table} | ${ord.customer}</b><br><small style="color:#ccc;">${ord.items}</small><br>
+                <b style="color:#25D366; font-size:18px;">₹${ord.total}</b></div>`;
+        });
+    });
 
     onSnapshot(query(collection(db, "categories"), orderBy("timestamp", "asc")), (snap) => {
         const tabs = document.getElementById('tabsContainer'), area = document.getElementById('menuArea');
@@ -242,27 +240,22 @@
         onSnapshot(collection(db, "menu_items"), (snap) => {
             document.querySelectorAll('table[id$="T"]').forEach(t => t.innerHTML = "");
             snap.forEach(d => {
-                const it = d.data(); 
-                const tbl = document.getElementById(it.cat + 'T');
-                const status = it.status || "visible";
-                const isHidden = status === "hidden";
-                
+                const it = d.data(); const tbl = document.getElementById(it.cat + 'T');
                 if(tbl) {
-                    const row = tbl.insertRow();
-                    if(isHidden) row.className = "item-hidden";
-                    row.innerHTML = `
-                        <td>${it.name}</td>
-                        <td>₹${it.price}</td>
-                        <td style="text-align:right;">
-                            <button class="eye-toggle" onclick="toggleVisibility('${d.id}', '${status}')">
-                                <i class="fa ${isHidden ? 'fa-eye-slash' : 'fa-eye'}"></i>
-                            </button>
-                            <button class="del-btn" style="float:none; margin-left:10px;" onclick="deleteDoc(doc(db,'menu_items','${d.id}'))">X</button>
-                        </td>`;
+                    const status = it.status || "visible"; const isHidden = status === "hidden";
+                    const row = tbl.insertRow(); if(isHidden) row.className = "item-hidden";
+                    row.innerHTML = `<td>${it.name}</td><td>₹${it.price}</td><td style="text-align:right;">
+                        <button class="eye-toggle" onclick="toggleVisibility('${d.id}', '${status}')"><i class="fa ${isHidden ? 'fa-eye-slash' : 'fa-eye'}"></i></button>
+                        <button class="del-btn" style="float:none; margin-left:10px;" onclick="deleteDoc(doc(db,'menu_items','${d.id}'))">X</button></td>`;
                 }
             });
         });
     }
+
+    // --- Other Functions ---
+    window.toggleVisibility = async (id, currentStatus) => {
+        await updateDoc(doc(db, "menu_items", id), { status: currentStatus === "hidden" ? "visible" : "hidden" });
+    };
 
     window.updateMenu = async () => {
         const name = document.getElementById('itemName').value, price = document.getElementById('itemPrice').value, cat = document.getElementById('categorySelect').value;
@@ -274,19 +267,36 @@
     window.closeSettings = () => document.getElementById('settingsModal').style.display = 'none';
     window.backToSettings = () => {
         document.getElementById('mainOptions').style.display = 'block';
-        document.getElementById('sectorManager').style.display = 'none';
-        document.getElementById('tablesGrid').style.display = 'none';
-        document.getElementById('historyResult').style.display = 'none';
+        ['sectorManager', 'tablesGrid', 'historyResult'].forEach(id => document.getElementById(id).style.display = 'none');
         document.getElementById('modalTitle').innerText = "Admin Settings";
     };
     window.showSectorManager = () => { document.getElementById('mainOptions').style.display = 'none'; document.getElementById('sectorManager').style.display = 'block'; };
-    window.showTablesGrid = () => {
-        document.getElementById('mainOptions').style.display = 'none'; document.getElementById('tablesGrid').style.display = 'block';
-        const grid = document.getElementById('gridContainer'); grid.innerHTML = "";
-        for(let i=1; i<=50; i++) grid.innerHTML += `<div class="table-btn" onclick="window.showHistory(${i})">T-${i}</div>`;
+
+    window.adminSearchFood = () => {
+        let q = document.getElementById('adminSearch').value.toLowerCase();
+        document.querySelectorAll('.category-card').forEach(c => c.style.display = c.innerText.toLowerCase().includes(q) ? "block" : "none");
     };
-    
-    window.deleteDoc = deleteDoc; window.doc = doc; window.db = db; window.toggleVisibility = toggleVisibility;
+
+    window.clearAllHistory = async () => {
+        if(confirm("సేల్స్ హిస్టరీ మొత్తం డిలీట్ చేయాలా?")) {
+            const snap = await getDocs(collection(db, "orders"));
+            const batch = writeBatch(db); snap.forEach(d => batch.delete(d.ref)); await batch.commit();
+            alert("History Reset Done! ✅");
+        }
+    };
+
+    window.addNewSector = async () => {
+        const name = document.getElementById('newSectorName').value, file = document.getElementById('newSectorImage').files[0];
+        if(!name || !file) return alert("Please select name and image!");
+        const btn = document.getElementById('addBtn'); btn.innerText = "Uploading...";
+        const fd = new FormData(); fd.append("image", file);
+        const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method: "POST", body: fd });
+        const data = await res.json();
+        await setDoc(doc(db, "categories", name.toLowerCase().replace(/\s+/g, '')), { name, id: name.toLowerCase().replace(/\s+/g, ''), image: data.data.url, timestamp: serverTimestamp() });
+        btn.innerText = "UPLOAD NEW SECTOR";
+    };
+
+    window.deleteDoc = deleteDoc; window.doc = doc; window.db = db;
 </script>
 </body>
 </html>
