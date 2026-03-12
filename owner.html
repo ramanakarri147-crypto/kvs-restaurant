@@ -26,23 +26,37 @@
         .view-btn { background: #25D366; color: white; text-decoration: none; display: block; text-align: center; padding: 12px; border-radius: 5px; font-weight: bold; margin-top: 10px; }
         .live-order-card { background: #282828; padding: 15px; margin-bottom: 12px; border-radius: 10px; border-left: 5px solid #25D366; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
         .del-btn { background: #ff4444; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; float: right; font-weight: bold; }
-        .bill-fab { position: fixed; bottom: 30px; right: 30px; background: #FFD700; color: #000; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 25px; cursor: pointer; z-index: 4000; box-shadow: 0 5px 15px rgba(0,0,0,0.5); animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        
+        /* Yellow Bill Icon Floating Animation */
+        .bill-fab { position: fixed; bottom: 30px; right: 30px; background: #FFD700; color: #000; width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: pointer; z-index: 4000; box-shadow: 0 5px 15px rgba(0,0,0,0.5); animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7); } 70% { transform: scale(1.1); box-shadow: 0 0 0 15px rgba(255, 215, 0, 0); } 100% { transform: scale(1); } }
+        
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 5000; padding: 15px; overflow-y: auto; }
         .modal-content { max-width: 500px; margin: auto; background: #1a1a1a; padding: 20px; border-radius: 15px; border: 1.5px solid #FFD700; position: relative; }
-        .dmart-bill { background: white; color: black; padding: 15px; margin-bottom: 20px; font-family: 'Courier New', monospace; border-radius: 2px; }
-        .dmart-header { text-align: center; border-bottom: 1px dashed black; padding-bottom: 5px; margin-bottom: 10px; }
-        .dmart-row { display: flex; justify-content: space-between; font-size: 13px; margin: 3px 0; }
-        .dmart-total { border-top: 1px dashed black; padding-top: 5px; margin-top: 10px; font-weight: bold; font-size: 16px; display: flex; justify-content: space-between; }
-        .print-btn-mini { background: #25D366; color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; }
+        
+        /* Professional Bill Style */
+        .dmart-bill { background: white; color: black; padding: 20px; margin-bottom: 20px; font-family: 'Courier New', monospace; border-radius: 2px; box-shadow: 0 0 10px rgba(255,255,255,0.1); }
+        .dmart-header { text-align: center; border-bottom: 1px dashed black; padding-bottom: 10px; margin-bottom: 10px; }
+        .dmart-row { display: flex; justify-content: space-between; font-size: 14px; margin: 5px 0; }
+        .dmart-total { border-top: 1px dashed black; padding-top: 8px; margin-top: 10px; font-weight: bold; font-size: 18px; display: flex; justify-content: space-between; }
+        .rating-stars { color: #f39c12; font-size: 16px; margin-top: 5px; }
+        
+        .print-btn-mini { background: #25D366; color: white; border: none; padding: 12px; width: 48%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; }
+        .done-btn-mini { background: #ff4444; color: white; border: none; padding: 12px; width: 48%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; float: right; }
+        
         .grid-50 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 15px; }
         .table-btn { background: #333; color: #FFD700; border: 1px solid #FFD700; padding: 10px; border-radius: 5px; cursor: pointer; text-align: center; font-weight: bold; }
         .menu-option { background: #333; padding: 15px; margin: 10px 0; border-radius: 8px; cursor: pointer; text-align: center; color: #FFD700; font-weight: bold; border: 1px solid #444; font-size: 16px; }
         table { width: 100%; border-collapse: collapse; color: white; margin-top: 10px; }
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid #333; font-size: 13px; }
         th { color: #FFD700; text-transform: uppercase; }
-        .eye-toggle { background: none; border: none; color: #FFD700; cursor: pointer; font-size: 16px; padding: 5px; }
-        .item-hidden { opacity: 0.4; }
+
+        @media print {
+            body * { visibility: hidden; }
+            .dmart-bill, .dmart-bill * { visibility: visible; }
+            .dmart-bill { position: absolute; left: 0; top: 0; width: 100%; }
+            .no-print { display: none !important; }
+        }
     </style>
 </head>
 <body>
@@ -62,7 +76,7 @@
 
 <div id="billModal" class="modal">
     <div class="modal-content">
-        <button onclick="closeBillModal()" style="position:absolute; right:15px; top:15px; background:red; color:white; border:none; padding:5px 10px; cursor:pointer; border-radius:5px;">X</button>
+        <button onclick="closeBillModal()" class="no-print" style="position:absolute; right:15px; top:15px; background:red; color:white; border:none; padding:5px 10px; cursor:pointer; border-radius:5px;">X</button>
         <h2 style="color:#FFD700; text-align:center; margin-bottom:20px;">Customer Bills</h2>
         <div id="customerBillList">
             <p style="color:gray; text-align:center;">కొత్త బిల్లులు లేవు...</p>
@@ -116,7 +130,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc, getDocs, addDoc, setDoc, updateDoc, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc, getDocs, addDoc, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDYOgbu7yfwlSps_-32frEedWss1qmRQoM", 
@@ -130,24 +144,63 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // నిష్క్రమించే ముందు ఈ వేరియబుల్స్ గ్లోబల్ గా సెట్ చేస్తున్నాం
-    window.db = db;
-    window.deleteDoc = deleteDoc;
-    window.doc = doc;
+    // Snapshot for Customer Bills (owner_bills)
+    onSnapshot(query(collection(db, "owner_bills"), orderBy("timestamp", "desc")), (snap) => {
+        const billContainer = document.getElementById('customerBillList');
+        if (snap.empty) {
+            billContainer.innerHTML = '<p style="color:gray; text-align:center;">కొత్త బిల్లులు లేవు...</p>';
+            return;
+        }
+        billContainer.innerHTML = "";
+        snap.forEach(d => {
+            const bill = d.data();
+            const stars = "⭐".repeat(bill.rating || 5);
+            billContainer.innerHTML += `
+                <div class="dmart-bill" id="bill-${d.id}">
+                    <div class="dmart-header">
+                        <b style="font-size:18px;">KVS RUCHULU</b><br>
+                        <small>Tuni, East Godavari</small>
+                    </div>
+                    <div class="dmart-row"><span>Table: T-${bill.table}</span><span>${bill.time || ''}</span></div>
+                    <div class="dmart-row"><span>Customer:</span><span>${bill.customer}</span></div>
+                    <div style="border-bottom:1px dashed #000; margin:10px 0;"></div>
+                    <div style="font-size:13px;">${bill.items}</div>
+                    <div class="dmart-total"><span>Total</span><span>₹${bill.total}</span></div>
+                    <div class="rating-stars">Rating: ${stars}</div>
+                    <div class="no-print" style="margin-top:15px;">
+                        <button class="print-btn-mini" onclick="window.printBill('bill-${d.id}')">PRINT</button>
+                        <button class="done-btn-mini" onclick="window.markDone('${d.id}')">DONE</button>
+                    </div>
+                </div>`;
+        });
+    });
 
-    // --- History Logic Fixed ---
+    window.printBill = (id) => {
+        const printContent = document.getElementById(id).innerHTML;
+        const originalContent = document.body.innerHTML;
+        document.body.innerHTML = `<div class="dmart-bill">${printContent}</div>`;
+        window.print();
+        location.reload(); // To restore admin page
+    };
+
+    window.markDone = async (id) => {
+        if(confirm("ఈ బిల్లును క్లియర్ చేయాలా?")) {
+            await deleteDoc(doc(db, "owner_bills", id));
+        }
+    };
+
+    // Original Logic Preserved
     window.showHistory = async (type) => {
         document.getElementById('mainOptions').style.display = 'none';
         document.getElementById('tablesGrid').style.display = 'none';
         document.getElementById('historyResult').style.display = 'block';
-        const snap = await getDocs(query(collection(db, "orders"), orderBy("timestamp", "desc")));
+        const snap = await getDocs(query(collection(db, "owner_bills"), orderBy("timestamp", "desc")));
         let total = 0;
         let htm = `<h3 style="color:#FFD700; text-align:center;">${type === 'all' ? 'Total Sales' : 'Table ' + type} Report</h3><table><tr><th>Time</th><th>Table</th><th>Bill</th></tr>`;
         snap.forEach(d => {
             const o = d.data();
             if(type === 'all' || o.table == type) {
-                let time = o.timestamp ? o.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "N/A";
-                htm += `<tr><td>${time}</td><td>T-${o.table}</td><td>₹${o.total}</td></tr>`;
+                htm += `<tr><td>${o.time || 'N/A'}</td><td>T-${o.table}</td><td>₹${o.total}</td></tr>`;
                 total += Number(o.total);
             }
         });
@@ -168,18 +221,19 @@
         }
     };
 
-    // --- Snapshot Listeners ---
     onSnapshot(query(collection(db, "orders"), orderBy("timestamp", "desc")), (snap) => {
         const list = document.getElementById('orderList');
         list.innerHTML = "";
         snap.forEach(d => {
             const ord = d.data();
             list.innerHTML += `<div class="live-order-card">
-                <button class="del-btn" onclick="deleteDoc(doc(db,'orders','${d.id}'))">Done</button>
+                <button class="del-btn" onclick="window.deleteOrder('${d.id}')">Done</button>
                 <b>T-${ord.table} | ${ord.customer}</b><br><small>${ord.items}</small><br>
                 <b style="color:#25D366;">₹${ord.total}</b></div>`;
         });
     });
+
+    window.deleteOrder = async (id) => { await deleteDoc(doc(db, "orders", id)); };
 
     onSnapshot(query(collection(db, "categories"), orderBy("timestamp", "asc")), (snap) => {
         const tabs = document.getElementById('tabsContainer'), area = document.getElementById('menuArea');
@@ -190,10 +244,12 @@
             tabs.innerHTML += `<a href="#${cat.id}" class="sector-btn">${cat.name}</a>`;
             area.innerHTML += `<div class="category-card" id="${cat.id}"><img src="${cat.image}"><h3>${cat.name}</h3><table id="${cat.id}T"></table></div>`;
             select.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
-            list.innerHTML += `<div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #333;"><span>${cat.name}</span><button class="del-btn" onclick="deleteDoc(doc(db,'categories','${d.id}'))">X</button></div>`;
+            list.innerHTML += `<div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #333;"><span>${cat.name}</span><button class="del-btn" onclick="window.deleteCategory('${d.id}')">X</button></div>`;
         });
         loadMenu();
     });
+
+    window.deleteCategory = async (id) => { await deleteDoc(doc(db, "categories", id)); };
 
     function loadMenu() {
         onSnapshot(collection(db, "menu_items"), (snap) => {
@@ -202,11 +258,13 @@
                 const it = d.data(); const tbl = document.getElementById(it.cat + 'T');
                 if(tbl) {
                     const row = tbl.insertRow();
-                    row.innerHTML = `<td>${it.name}</td><td>₹${it.price}</td><td style="text-align:right;"><button class="del-btn" onclick="deleteDoc(doc(db,'menu_items','${d.id}'))">X</button></td>`;
+                    row.innerHTML = `<td>${it.name}</td><td>₹${it.price}</td><td style="text-align:right;"><button class="del-btn" onclick="window.deleteMenuItem('${d.id}')">X</button></td>`;
                 }
             });
         });
     }
+
+    window.deleteMenuItem = async (id) => { await deleteDoc(doc(db, "menu_items", id)); };
 
     window.updateMenu = async () => {
         const name = document.getElementById('itemName').value, price = document.getElementById('itemPrice').value, cat = document.getElementById('categorySelect').value;
@@ -214,6 +272,8 @@
         document.getElementById('itemName').value = ""; document.getElementById('itemPrice').value = "";
     };
 
+    window.openBillModal = () => document.getElementById('billModal').style.display = 'block';
+    window.closeBillModal = () => document.getElementById('billModal').style.display = 'none';
     window.openSettings = () => { document.getElementById('settingsModal').style.display = 'block'; backToSettings(); };
     window.closeSettings = () => document.getElementById('settingsModal').style.display = 'none';
     window.backToSettings = () => {
@@ -224,7 +284,7 @@
 
     window.clearAllHistory = async () => {
         if(confirm("సేల్స్ హిస్టరీ మొత్తం డిలీట్ చేయాలా?")) {
-            const snap = await getDocs(collection(db, "orders"));
+            const snap = await getDocs(collection(db, "owner_bills"));
             const batch = writeBatch(db); snap.forEach(d => batch.delete(d.ref)); await batch.commit();
             alert("History Reset Done! ✅");
         }

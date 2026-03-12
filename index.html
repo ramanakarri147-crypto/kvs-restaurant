@@ -51,6 +51,11 @@
         .receipt-line { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 13px; }
         .receipt-total { border-top: 2px dashed black; margin-top: 10px; padding-top: 10px; font-weight: bold; font-size: 16px; display: flex; justify-content: space-between; }
         .receipt-footer { text-align: center; font-size: 11px; margin-top: 15px; font-style: italic; border-top: 1px solid #eee; padding-top: 5px; }
+
+        /* Star Rating Design */
+        .stars-row { font-size: 30px; margin: 10px 0; color: #ddd; }
+        .stars-row span { cursor: pointer; transition: 0.2s; }
+        .stars-row span.active { color: #FFD700; }
     </style>
 </head>
 <body>
@@ -108,11 +113,12 @@
   let dynamicSectors = [];
   let consumedItems = [];
   let totalBillAmount = 0;
+  let userRating = 5; // Default rating
   
   const HOTEL_LAT = 17.345585; 
   const HOTEL_LON = 82.542439;
 
-  function startApp() {
+  window.startApp = () => {
       customerName = document.getElementById('custName').value.trim();
       if (customerName.length < 2) return alert("దయచేసి మీ పేరు ఇవ్వండి!");
       document.getElementById('welcome-screen').style.display = 'none';
@@ -207,14 +213,13 @@
       }
       navigator.geolocation.getCurrentPosition((pos) => {
           const dist = getDistance(pos.coords.latitude, pos.coords.longitude, HOTEL_LAT, HOTEL_LON);
-          if(dist <= 100) {
-              submitFinal(); 
-          } else { 
-              alert("క్షమించండి! మీరు మా రెస్టారెంట్ కి 100KM పరిధిలో లేరు. దూరం: " + dist.toFixed(2) + " KM"); 
+          if(dist <= 100) { submitFinal(); } 
+          else { 
+              alert("క్షమించండి! మీరు మా రెస్టారెంట్ కి 100KM పరిధిలో లేరు."); 
               btn.innerText = "CONFIRM ORDER"; btn.disabled = false; 
           }
       }, (err) => { 
-          alert("దయచేసి మీ ఫోన్ లో GPS/Location ఆన్ చేసి పర్మిషన్ ఇవ్వండి!"); 
+          alert("దయచేసి మీ ఫోన్ లో GPS ఆన్ చేయండి!"); 
           btn.innerText = "CONFIRM ORDER"; btn.disabled = false; 
       }, { enableHighAccuracy: true });
   };
@@ -239,14 +244,24 @@
       fetchData();
   };
 
+  window.setRating = (val) => {
+      userRating = val;
+      const stars = document.querySelectorAll('.stars-row span');
+      stars.forEach((s, i) => {
+          if(i < val) s.classList.add('active');
+          else s.classList.remove('active');
+      });
+  };
+
   function updateDigitalReceipt() {
       const receipt = document.getElementById('digital-receipt');
       if(consumedItems.length > 0) {
           receipt.style.display = 'block';
           const now = new Date();
           const dateStr = now.toLocaleDateString('en-IN');
-          const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
           let itemsHtml = consumedItems.map(i => `<div class="receipt-line"><span>${i.name} (x${i.qty})</span><span>₹${i.price}</span></div>`).join('');
+          
           receipt.innerHTML = `
               <div class="receipt-header">
                   <div style="font-weight:bold; font-size:20px;">KVS RESTAURANT</div>
@@ -260,42 +275,37 @@
               <div class="receipt-total"><span>GRAND TOTAL</span><span>₹${totalBillAmount}</span></div>
               
               <div id="rating-container" style="margin-top:20px; text-align:center; padding:10px; border-top:1px dashed #000;">
-                <p style="font-weight:bold; margin-bottom:5px;">మా ఆహారంపై మీ అభిప్రాయం (Rating):</p>
-                <select id="food-rating" style="width:100%; padding:10px; border-radius:5px; border:1px solid #ccc; font-size:14px;">
-                    <option value="5">⭐⭐⭐⭐⭐ (Excellent)</option>
-                    <option value="4">⭐⭐⭐⭐ (Good)</option>
-                    <option value="3">⭐⭐⭐ (Average)</option>
-                    <option value="2">⭐⭐ (Poor)</option>
-                    <option value="1">⭐ (Bad)</option>
-                </select>
+                <p style="font-weight:bold; margin-bottom:5px;">మా ఆహారంపై మీ అభిప్రాయం:</p>
+                <div class="stars-row">
+                    <span class="active" onclick="setRating(1)">★</span>
+                    <span class="active" onclick="setRating(2)">★</span>
+                    <span class="active" onclick="setRating(3)">★</span>
+                    <span class="active" onclick="setRating(4)">★</span>
+                    <span class="active" onclick="setRating(5)">★</span>
+                </div>
                 <button onclick="finalSubmitToOwner()" class="finish-btn" style="margin-top:10px;">ORDER DONE ✔️</button>
               </div>
-
-              <div class="receipt-footer">--- Thank You! Visit Again ---<br><span style="font-size:9px;">Generated at ${timeStr}</span></div>
+              <div class="receipt-footer">--- Thank You! Visit Again ---</div>
           `;
           receipt.scrollIntoView({ behavior: 'smooth' });
       }
   }
 
   window.finalSubmitToOwner = async () => {
-    const ratingValue = document.getElementById('food-rating').value;
     const urlParams = new URLSearchParams(window.location.search);
-    
     await addDoc(collection(db, "owner_bills"), {
         customer: customerName,
         table: urlParams.get('table') || "Counter",
         items: consumedItems.map(i => `${i.name} (${i.qty})`).join(", "),
         total: totalBillAmount,
-        rating: ratingValue,
+        rating: userRating,
         timestamp: serverTimestamp(),
-        time: new Date().toLocaleString('en-IN')
+        time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
     });
-
-    alert("మీ ఆర్డర్ సక్సెస్‌ఫుల్ గా పూర్తి అయ్యింది! బిల్లు మరియు రేటింగ్ ఓనర్ కి పంపబడింది. ✅");
+    alert("మీ ఆర్డర్ సక్సెస్‌ఫుల్ గా పూర్తి అయ్యింది! ✅");
     document.getElementById('rating-container').innerHTML = `<h4 style="color:green; padding:10px;">ఆర్డర్ పూర్తయింది. ధన్యవాదాలు!</h4>`;
   };
 
-  window.startApp = startApp;
   window.searchFood = () => {
       let query = document.getElementById('search').value.toLowerCase();
       let groups = document.getElementsByClassName('category-group');
