@@ -2,7 +2,8 @@
 <html lang="te">
 <head>
     <meta charset="UTF-8">
-    <title>KVS Admin - Fixed Version</title>
+    <title>KVS Admin - QR Fixed Version</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Poppins:wght@300;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -47,7 +48,7 @@
         .menu-option { background: #333; padding: 15px; margin: 10px 0; border-radius: 8px; cursor: pointer; text-align: center; color: #FFD700; border: 1px solid #444; font-weight: bold; }
         table { width: 100%; border-collapse: collapse; color: white; margin-top: 10px; }
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid #333; font-size: 13px; }
-        .qr-card { background: white; padding: 10px; border-radius: 8px; text-align: center; color: black; margin-top: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .qr-card { background: white; padding: 10px; border-radius: 5px; text-align: center; color: black; margin-top: 10px; display: flex; flex-direction: column; align-items: center; }
     </style>
 </head>
 <body>
@@ -100,12 +101,11 @@
         <div id="qrSection" style="display:none;">
             <button onclick="window.backToSettings()" style="background:#555; color:white; padding:5px 10px; border-radius:5px;">⬅ Back</button>
             <h3 style="color:#FFD700; text-align:center;">Generate Table QR</h3>
-            <div style="display: flex; gap: 8px;">
+            <div style="display:flex; gap:10px;">
                 <input type="number" id="customTableNo" placeholder="Table Number (1, 2, 3...)">
-                <button class="update-btn" onclick="window.generateTableQR()" style="width: 100px;">ADD QR</button>
+                <button class="update-btn" onclick="window.generateTableQR()" style="width:120px;">ADD QR</button>
             </div>
-            <div id="qrResult" style="margin-top:20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"></div>
-            <button onclick="document.getElementById('qrResult').innerHTML=''" style="width:100%; margin-top:20px; background:transparent; border:1px solid #444; color:gray; padding:8px; border-radius:5px; font-size:12px;">Clear All QR Codes</button>
+            <div id="qrResult" style="margin-top:20px; display:grid; grid-template-columns: 1fr 1fr; gap:10px;"></div>
         </div>
 
         <div id="tablesGrid" style="display:none;">
@@ -152,7 +152,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // --- QR LOGIC WITH MULTIPLE GENERATION & DOWNLOAD ---
+    // --- QR LOGIC (FIXED) ---
     window.showQRSection = () => {
         document.getElementById('mainOptions').style.display = 'none';
         document.getElementById('qrSection').style.display = 'block';
@@ -163,32 +163,36 @@
         if(!tNo) return alert("Table నంబర్ టైప్ చేయండి!");
         
         const url = `https://ramanakarri147-crypto.github.io/KVS-RUCHULU/index.html?table=${tNo}`;
-        const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+        const qrId = `qr-${tNo}-${Date.now()}`;
         
-        const qrDiv = document.createElement('div');
-        qrDiv.className = "qr-card";
-        qrDiv.innerHTML = `
-            <img src="${qrSrc}" style="width:100px; height:100px; margin-top:5px;">
-            <p style="margin:5px 0; font-size:12px;"><b>Table - ${tNo}</b></p>
-            <button onclick="window.downloadQR('${qrSrc}', 'Table-${tNo}')" style="background:#25D366; color:white; border:none; padding:5px; border-radius:3px; font-size:10px; cursor:pointer; margin-bottom:5px; width:90%;">DOWNLOAD</button>
+        const qrCard = document.createElement('div');
+        qrCard.className = "qr-card";
+        qrCard.innerHTML = `
+            <div id="${qrId}" style="margin-bottom:10px;"></div>
+            <p style="margin:0; font-weight:bold; font-size:12px; color:black;">Table - ${tNo}</p>
+            <button onclick="window.downloadQR('${qrId}', 'Table-${tNo}')" style="background:#25D366; color:white; border:none; padding:5px; border-radius:3px; margin-top:5px; width:100%; font-size:10px; cursor:pointer;">DOWNLOAD</button>
         `;
-        document.getElementById('qrResult').appendChild(qrDiv);
-        document.getElementById('customTableNo').value = ""; // Clear input for next one
+        document.getElementById('qrResult').appendChild(qrCard);
+
+        new QRCode(document.getElementById(qrId), {
+            text: url,
+            width: 120,
+            height: 120
+        });
+        
+        document.getElementById('customTableNo').value = "";
     };
 
-    window.downloadQR = async (src, fileName) => {
-        try {
-            const response = await fetch(src);
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${fileName}.png`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-        } catch (e) { alert("Download failed. Please try again."); }
+    window.downloadQR = (qrId, fileName) => {
+        const canvas = document.getElementById(qrId).querySelector('canvas');
+        if (canvas) {
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL("image/png");
+            link.download = `${fileName}.png`;
+            link.click();
+        } else {
+            alert("QR కోడ్ తయారవ్వడంలో సమస్య వచ్చింది, మళ్ళీ ప్రయత్నించు రమణ!");
+        }
     };
 
     // --- CATEGORY ADD WITH FILE PICKER ---
@@ -232,7 +236,7 @@
         });
     });
 
-    // --- BILLS ---
+    // --- BILLS & REST OF CODE ---
     onSnapshot(query(collection(db, "owner_bills"), orderBy("timestamp", "desc")), (snap) => {
         const billContainer = document.getElementById('customerBillList');
         if (snap.empty) { billContainer.innerHTML = '<p style="color:gray; text-align:center;">కొత్త బిల్లులు లేవు...</p>'; return; }
@@ -292,7 +296,7 @@
         document.getElementById('historyContent').innerHTML = htm + `</table><h2 style="text-align:right; color:#25D366; margin-top:20px;">Total: ₹${total}</h2>`;
     };
     window.printBill = (id) => { const content = document.getElementById(id).innerHTML; document.body.innerHTML = `<div class="dmart-bill">${content}</div>`; window.print(); location.reload(); };
-    window.markDone = async (id) => { if(confirm("బిల్లు క్లియర్ చేయాలా?")) await deleteDoc(doc(doc(db, "owner_bills", id))); };
+    window.markDone = async (id) => { if(confirm("బిల్లు క్లియర్ చేయాలా?")) await deleteDoc(doc(db, "owner_bills", id)); };
     window.deleteOrder = async (id) => { await deleteDoc(doc(db, "orders", id)); };
 
     onSnapshot(query(collection(db, "categories"), orderBy("timestamp", "asc")), (snap) => {
