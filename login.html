@@ -8,6 +8,7 @@
     
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
     <style>
         * { box-sizing: border-box; }
@@ -84,7 +85,6 @@
     </div>
 
     <script>
-        // --- నీ పర్సనల్ Firebase Config వివరాలు ఇక్కడ సెట్ చేశాను ---
         const firebaseConfig = {
             apiKey: "AIzaSyDYOgbu7yfwlSps_-32frEedWss1qmRQoM",
             authDomain: "kvs-project-c60d8.firebaseapp.com",
@@ -95,6 +95,7 @@
         };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
+        const db = firebase.firestore(); // Firestore ని కనెక్ట్ చేశాను
 
         function toggleVisibility(id) {
             const input = document.getElementById(id);
@@ -102,30 +103,60 @@
         }
 
         // రిజిస్ట్రేషన్
-        function handleRegister() {
+        async function handleRegister() {
             const email = document.getElementById('regUserID').value;
             const pin = document.getElementById('regPin').value;
+            const name = document.getElementById('regName').value;
 
             if(!email.includes("@")) {
                 alert("దయచేసి సరైన Email ID ఇవ్వండి!");
                 return;
             }
 
-            auth.createUserWithEmailAndPassword(email, pin)
-                .then(() => alert("అకౌంట్ సక్సెస్‌ఫుల్ గా క్రియేట్ అయ్యింది!"))
-                .catch((error) => alert("తప్పు: " + error.message));
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, pin);
+                // కొత్తగా రిజిస్టర్ అయినప్పుడు ఓనర్ పేరుని సేవ్ చేయడం
+                await db.collection("owners").doc(userCredential.user.uid).set({
+                    ownerName: name,
+                    email: email
+                });
+                alert("అకౌంట్ సక్సెస్‌ఫుల్ గా క్రియేట్ అయ్యింది!");
+            } catch (error) {
+                alert("తప్పు: " + error.message);
+            }
         }
 
-        // లాగిన్
+        // లాగిన్ మరియు ఆటోమేటిక్ లొకేషన్ సేవింగ్
         function handleLogin() {
             const email = document.getElementById('loginUser').value;
             const pin = document.getElementById('loginPass').value;
 
             auth.signInWithEmailAndPassword(email, pin)
                 .then((userCredential) => {
-                    alert("స్వాగతం!");
-                    localStorage.setItem('kvs_user_uid', userCredential.user.uid);
-                    window.location.href = 'owner.html';
+                    const uid = userCredential.user.uid;
+                    localStorage.setItem('kvs_user_uid', uid);
+
+                    // లొకేషన్ పర్మిషన్ అడగడం
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(async (position) => {
+                            const lat = position.coords.latitude;
+                            const lng = position.coords.longitude;
+
+                            // హోటల్ లొకేషన్ ని ఓనర్ ఐడి కింద సేవ్ చేస్తున్నాం
+                            await db.collection("owners").doc(uid).set({
+                                hotelLocation: { lat: lat, lng: lng }
+                            }, { merge: true });
+
+                            alert("స్వాగతం! మీ హోటల్ లొకేషన్ అప్‌డేట్ అయ్యింది. 📍");
+                            window.location.href = 'owner.html';
+                        }, (error) => {
+                            // పర్మిషన్ ఇవ్వకపోయినా లాగిన్ అవుతుంది కానీ సెక్యూరిటీ ఉండదు
+                            alert("Location Allow చేస్తేనే దూరం లాక్ సిస్టమ్ పనిచేస్తుంది.");
+                            window.location.href = 'owner.html';
+                        });
+                    } else {
+                        window.location.href = 'owner.html';
+                    }
                 })
                 .catch((error) => alert("లాగిన్ అవ్వలేదు: " + error.message));
         }
@@ -134,7 +165,7 @@
             const email = prompt("మీ రిజిస్టర్డ్ ఇమెయిల్ ఇవ్వండి:");
             if(email) {
                 auth.sendPasswordResetEmail(email)
-                    .then(() => alert("పాస్‌వర్డ్ రీసెట్ లింక్ ఇమెయిల్ కి పంపాము!"))
+                    .then(() => alert("పాസ്‌వర్డ్ రీసెట్ లింక్ ఇమెయిల్ కి పంపాము!"))
                     .catch((error) => alert(error.message));
             }
         }

@@ -2,7 +2,8 @@
 <html lang="te">
 <head>
     <meta charset="UTF-8">
-    <title>KVS Admin - QR Fixed Version</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KVS Admin - QR & Bills Fixed</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Poppins:wght@300;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -152,7 +153,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // --- QR LOGIC (FIXED) ---
+    // --- QR LOGIC ---
     window.showQRSection = () => {
         document.getElementById('mainOptions').style.display = 'none';
         document.getElementById('qrSection').style.display = 'block';
@@ -160,9 +161,11 @@
 
     window.generateTableQR = () => {
         const tNo = document.getElementById('customTableNo').value;
+        const ownerId = localStorage.getItem('kvs_user_uid');
         if(!tNo) return alert("Table నంబర్ టైప్ చేయండి!");
+        if(!ownerId) return alert("దయచేసి మళ్ళీ లాగిన్ అవ్వండి!");
         
-        const url = `https://ramanakarri147-crypto.github.io/KVS-RUCHULU/index.html?table=${tNo}`;
+        const url = `https://ramanakarri147-crypto.github.io/KVS-RUCHULU/index.html?owner=${ownerId}&table=${tNo}`;
         const qrId = `qr-${tNo}-${Date.now()}`;
         
         const qrCard = document.createElement('div');
@@ -175,11 +178,8 @@
         document.getElementById('qrResult').appendChild(qrCard);
 
         new QRCode(document.getElementById(qrId), {
-            text: url,
-            width: 120,
-            height: 120
+            text: url, width: 120, height: 120
         });
-        
         document.getElementById('customTableNo').value = "";
     };
 
@@ -190,56 +190,16 @@
             link.href = canvas.toDataURL("image/png");
             link.download = `${fileName}.png`;
             link.click();
-        } else {
-            alert("QR కోడ్ తయారవ్వడంలో సమస్య వచ్చింది, మళ్ళీ ప్రయత్నించు రమణ!");
         }
     };
 
-    // --- CATEGORY ADD WITH FILE PICKER ---
-    window.addNewCategoryWithFile = async () => {
-        const name = document.getElementById('newCatName').value;
-        const fileInput = document.getElementById('newCatImgFile');
-        const file = fileInput.files[0];
-
-        if(name && file) {
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                const base64Image = e.target.result;
-                const id = name.toLowerCase().replace(/\s/g, '');
-                await addDoc(collection(db, "categories"), { id, name, image: base64Image, timestamp: serverTimestamp() });
-                document.getElementById('newCatName').value = "";
-                fileInput.value = "";
-                alert("Category Saved Success! ✅");
-            };
-            reader.readAsDataURL(file);
-        } else { alert("Name మరియు Image ని ఎంచుకోండి!"); }
-    };
-
-    // --- LIVE ORDERS ---
-    onSnapshot(query(collection(db, "orders"), orderBy("timestamp", "desc")), (snap) => {
-        const list = document.getElementById('orderList');
-        list.innerHTML = "";
-        snap.forEach(d => {
-            const ord = d.data();
-            const ordTime = ord.timestamp ? new Date(ord.timestamp.seconds * 1000).toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'}) : 'Just now';
-            const ordDate = ord.timestamp ? new Date(ord.timestamp.seconds * 1000).toLocaleDateString('en-IN') : '';
-            list.innerHTML += `
-                <div class="live-order-card">
-                    <button class="del-btn" onclick="window.deleteOrder('${d.id}')">Done</button>
-                    <b>T-${ord.table} | ${ord.customer}</b><br>
-                    <small>${ord.items}</small><br>
-                    <div style="display:flex; justify-content:space-between; margin-top:8px; border-top:1px solid #444; padding-top:5px;">
-                        <b style="color:#25D366;">₹${ord.total}</b>
-                        <span style="font-size:10px; color:#FFD700;">${ordDate} | ${ordTime}</span>
-                    </div>
-                </div>`;
-        });
-    });
-
-    // --- BILLS & REST OF CODE ---
+    // --- D-MART STYLE BILLS (ఇక్కడ ఫిక్స్ చేశాను రమణ!) ---
     onSnapshot(query(collection(db, "owner_bills"), orderBy("timestamp", "desc")), (snap) => {
         const billContainer = document.getElementById('customerBillList');
-        if (snap.empty) { billContainer.innerHTML = '<p style="color:gray; text-align:center;">కొత్త బిల్లులు లేవు...</p>'; return; }
+        if (snap.empty) { 
+            billContainer.innerHTML = '<p style="color:gray; text-align:center;">కొత్త బిల్లులు లేవు...</p>'; 
+            return; 
+        }
         billContainer.innerHTML = "";
         snap.forEach(d => {
             const bill = d.data();
@@ -252,7 +212,7 @@
                     <div style="border-bottom:1px dashed #000; margin:10px 0;"></div>
                     <div style="font-size:13px;">${bill.items}</div>
                     <div class="dmart-total"><span>Total</span><span>₹${bill.total}</span></div>
-                    <div style="margin-top:15px; display:flex; gap:10px;">
+                    <div style="margin-top:15px; display:flex; gap:10px;" class="no-print">
                         <button style="flex:1; background:#25D366; color:white; border:none; padding:10px; border-radius:5px;" onclick="window.printBill('bill-${d.id}')">PRINT</button>
                         <button style="flex:1; background:#ff4444; color:white; border:none; padding:10px; border-radius:5px;" onclick="window.markDone('${d.id}')">DONE</button>
                     </div>
@@ -260,6 +220,43 @@
         });
     });
 
+    window.printBill = (id) => { 
+        const content = document.getElementById(id).innerHTML; 
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`<html><head><style>
+            .dmart-bill { background: white; color: black; padding: 20px; font-family: 'Courier New', monospace; width: 300px; }
+            .dmart-header { text-align: center; border-bottom: 1px dashed black; padding-bottom: 10px; margin-bottom: 10px; }
+            .dmart-row { display: flex; justify-content: space-between; font-size: 14px; margin: 5px 0; }
+            .dmart-total { border-top: 1px dashed black; padding-top: 8px; margin-top: 10px; font-weight: bold; font-size: 18px; display: flex; justify-content: space-between; }
+            .no-print { display: none !important; }
+        </style></head><body>${content}</body></html>`);
+        printWindow.document.close();
+        printWindow.print();
+    };
+
+    window.markDone = async (id) => { if(confirm("బిల్లు క్లియర్ చేయాలా?")) await deleteDoc(doc(db, "owner_bills", id)); };
+
+    // --- LIVE ORDERS ---
+    onSnapshot(query(collection(db, "orders"), orderBy("timestamp", "desc")), (snap) => {
+        const list = document.getElementById('orderList');
+        list.innerHTML = "";
+        snap.forEach(d => {
+            const ord = d.data();
+            const ordTime = ord.timestamp ? new Date(ord.timestamp.seconds * 1000).toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'}) : 'Just now';
+            list.innerHTML += `
+                <div class="live-order-card">
+                    <button class="del-btn" onclick="window.deleteOrder('${d.id}')">Done</button>
+                    <b>T-${ord.table} | ${ord.customer}</b><br>
+                    <small>${ord.items}</small><br>
+                    <div style="display:flex; justify-content:space-between; margin-top:8px; border-top:1px solid #444; padding-top:5px;">
+                        <b style="color:#25D366;">₹${ord.total}</b>
+                        <span style="font-size:10px; color:#FFD700;">${ordTime}</span>
+                    </div>
+                </div>`;
+        });
+    });
+
+    // --- UI HELPERS ---
     window.openSettings = () => { document.getElementById('settingsModal').style.display = 'block'; window.backToSettings(); };
     window.closeSettings = () => { document.getElementById('settingsModal').style.display = 'none'; };
     window.openBillModal = () => { document.getElementById('billModal').style.display = 'block'; };
@@ -284,7 +281,7 @@
         document.getElementById('historyResult').style.display = 'block';
         const snap = await getDocs(query(collection(db, "owner_bills"), orderBy("timestamp", "desc")));
         let total = 0;
-        let htm = `<h3 style="color:#FFD700; text-align:center;">Report</h3><table><tr><th>Date/Time</th><th>Table</th><th>Bill</th></tr>`;
+        let htm = `<h3 style="color:#FFD700; text-align:center;">Report</h3><table><tr><th>Time</th><th>Table</th><th>Bill</th></tr>`;
         snap.forEach(d => {
             const o = d.data();
             if(type === 'all' || o.table == type) {
@@ -295,10 +292,8 @@
         });
         document.getElementById('historyContent').innerHTML = htm + `</table><h2 style="text-align:right; color:#25D366; margin-top:20px;">Total: ₹${total}</h2>`;
     };
-    window.printBill = (id) => { const content = document.getElementById(id).innerHTML; document.body.innerHTML = `<div class="dmart-bill">${content}</div>`; window.print(); location.reload(); };
-    window.markDone = async (id) => { if(confirm("బిల్లు క్లియర్ చేయాలా?")) await deleteDoc(doc(db, "owner_bills", id)); };
-    window.deleteOrder = async (id) => { await deleteDoc(doc(db, "orders", id)); };
 
+    // --- DATA LOADING ---
     onSnapshot(query(collection(db, "categories"), orderBy("timestamp", "asc")), (snap) => {
         const tabs = document.getElementById('tabsContainer'), area = document.getElementById('menuArea');
         const select = document.getElementById('categorySelect'), list = document.getElementById('sectorList');
@@ -325,6 +320,7 @@
             });
         });
     }
+
     window.updateMenu = async () => {
         const name = document.getElementById('itemName').value, price = document.getElementById('itemPrice').value, cat = document.getElementById('categorySelect').value;
         if(name && price) await addDoc(collection(db, "menu_items"), { name, price: Number(price), cat });
@@ -332,7 +328,21 @@
     };
     window.deleteMenuItem = async (id) => { await deleteDoc(doc(db, "menu_items", id)); };
     window.deleteCategory = async (id) => { await deleteDoc(doc(db, "categories", id)); };
-    window.clearAllHistory = async () => { if(confirm("సేల్స్ హిస్టరీ మొత్తం డిలీట్ చేయాలా?")) { const snap = await getDocs(collection(db, "owner_bills")); const batch = writeBatch(db); snap.forEach(d => batch.delete(d.ref)); await batch.commit(); alert("History Reset Done! ✅"); } };
+    window.deleteOrder = async (id) => { await deleteDoc(doc(db, "orders", id)); };
+    window.clearAllHistory = async () => { if(confirm("హిస్టరీ మొత్తం డిలీట్ చేయాలా?")) { const snap = await getDocs(collection(db, "owner_bills")); const batch = writeBatch(db); snap.forEach(d => batch.delete(d.ref)); await batch.commit(); alert("History Reset Done! ✅"); } };
+    window.addNewCategoryWithFile = async () => {
+        const name = document.getElementById('newCatName').value;
+        const fileInput = document.getElementById('newCatImgFile');
+        if(name && fileInput.files[0]) {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const id = name.toLowerCase().replace(/\s/g, '');
+                await addDoc(collection(db, "categories"), { id, name, image: e.target.result, timestamp: serverTimestamp() });
+                document.getElementById('newCatName').value = ""; fileInput.value = "";
+            };
+            reader.readAsDataURL(fileInput.files[0]);
+        }
+    };
 </script>
 </body>
 </html>

@@ -18,7 +18,7 @@
         
         .category-group { margin: 15px; background: #161616; border-radius: 12px; border: 1px solid #222; overflow: hidden; scroll-margin-top: 170px; }
         .category-header { background: #FFD700; color: #000; padding: 10px; font-weight: bold; font-size: 14px; text-transform: uppercase; }
-        .category-img { width: 100%; height: 200px; object-fit: cover; display: block; background: #222 url('https://via.placeholder.com/400x200?text=KVS+Special') no-repeat center; border-bottom: 2px solid #FFD700; }
+        .category-img { width: 100%; height: 200px; object-fit: cover; display: block; background: #222; border-bottom: 2px solid #FFD700; }
         
         .menu-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #222; align-items: center; }
         .food-info b { display: block; font-size: 15px; }
@@ -36,29 +36,25 @@
         .card { background: white; color: black; padding: 20px; border-radius: 15px; width: 85%; max-width: 350px; text-align: center; }
         .finish-btn { background: #25D366; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; margin-top: 15px; cursor: pointer; font-size: 16px; }
 
-        .receipt-container { 
-            background: white; 
-            color: black; 
-            margin: 20px; 
-            padding: 20px; 
-            border-radius: 2px; 
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-            font-family: 'Courier New', Courier, monospace;
-            display: none;
-            position: relative;
-        }
+        .receipt-container { background: white; color: black; margin: 20px; padding: 20px; border-radius: 2px; box-shadow: 0 0 10px rgba(0,0,0,0.5); font-family: 'Courier New', monospace; display: none; }
         .receipt-header { border-bottom: 2px dashed black; padding-bottom: 10px; text-align: center; margin-bottom: 10px; }
         .receipt-line { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 13px; }
         .receipt-total { border-top: 2px dashed black; margin-top: 10px; padding-top: 10px; font-weight: bold; font-size: 16px; display: flex; justify-content: space-between; }
-        .receipt-footer { text-align: center; font-size: 11px; margin-top: 15px; font-style: italic; border-top: 1px solid #eee; padding-top: 5px; }
-
-        /* Star Rating Design */
+        
         .stars-row { font-size: 30px; margin: 10px 0; color: #ddd; }
         .stars-row span { cursor: pointer; transition: 0.2s; }
         .stars-row span.active { color: #FFD700; }
+
+        #location-error { display:none; position: fixed; top:0; left:0; width:100%; height:100%; background:#000; color:white; z-index:20000; text-align:center; padding-top:100px; }
     </style>
 </head>
 <body>
+
+<div id="location-error">
+    <h2 style="color:#FFD700;">Location Restricted!</h2>
+    <p>క్షమించండి! మీరు మా రెస్టారెంట్ లోపల ఉంటేనే <br> ఈ మెనూ చూడగలరు.</p>
+    <button onclick="checkLocationFirst()" class="finish-btn" style="width:200px; margin:auto;">RETRY CHECK</button>
+</div>
 
 <div id="welcome-screen">
     <div class="welcome-card">
@@ -70,14 +66,13 @@
 
 <div id="main-menu" style="display:none;">
     <div class="header">
-        <div class="hotel-name">KVS RESTAURANT</div>
+        <div class="hotel-name">KVS RUCHULU</div>
+        <div id="table-display" style="font-size:12px; color:#FFD700; font-weight:bold;">Table: Loading...</div>
         <input type="text" id="search" class="search-box" placeholder="Search for food..." onkeyup="searchFood()">
     </div>
     <div class="tabs-container" id="sector-tabs"></div>
     <div id="food-list"></div>
-
     <div id="digital-receipt" class="receipt-container"></div>
-    
     <div class="cart-wrapper">
         <div id="review-list"></div>
         <div id="cartBar" class="cart-bar">
@@ -101,8 +96,7 @@
     projectId: "kvs-project-c60d8",
     storageBucket: "kvs-project-c60d8.appspot.com",
     messagingSenderId: "905673301986",
-    appId: "1:905673301986:web:aad1477b1098d7cbf66380",
-    measurementId: "G-RX864HXH0J"
+    appId: "1:905673301986:web:aad1477b1098d7cbf66380"
   };
 
   const app = initializeApp(firebaseConfig);
@@ -110,118 +104,126 @@
 
   let cart = {};
   let customerName = "";
-  let dynamicSectors = [];
   let consumedItems = [];
   let totalBillAmount = 0;
-  let userRating = 5; // Default rating
+  let userRating = 5;
   
   const HOTEL_LAT = 17.345585; 
   const HOTEL_LON = 82.542439;
+  const ALLOWED_RADIUS = 0.2; // 200 Meters
 
-  window.startApp = () => {
-      customerName = document.getElementById('custName').value.trim();
-      if (customerName.length < 2) return alert("దయచేసి మీ పేరు ఇవ్వండి!");
-      document.getElementById('welcome-screen').style.display = 'none';
-      document.getElementById('main-menu').style.display = 'block';
-      fetchData(); 
-  }
-
-  function fetchData() {
-      onSnapshot(query(collection(db, "categories"), orderBy("timestamp", "asc")), (snapSectors) => {
-          dynamicSectors = snapSectors.docs.map(doc => ({ id: doc.data().id, name: doc.data().name, image: doc.data().image }));
-          onSnapshot(collection(db, "menu_items"), (snapItems) => {
-              const menuData = snapItems.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-              renderUI(menuData);
-          });
-      });
-  }
-
-  function renderUI(menuData) {
-      let tabHtml = "";
-      dynamicSectors.forEach(s => tabHtml += `<a href="#${s.id}" class="tab-link">${s.name}</a>`);
-      document.getElementById('sector-tabs').innerHTML = tabHtml;
-      let menuHtml = "";
-      dynamicSectors.forEach(s => {
-          const items = menuData.filter(item => item.cat === s.id);
-          if(items.length > 0) {
-              let categoryHtml = "";
-              let hasVisibleItems = false;
-              items.forEach(item => {
-                  if (item.status === "hidden") return; 
-                  hasVisibleItems = true;
-                  categoryHtml += `<div class="menu-item"><div class="food-info"><b>${item.name}</b><span>₹${item.price}</span></div><div id="btn-${item.id}"><button class="add-btn" onclick="addToCart('${item.id}','${item.name}',${item.price})">ADD</button></div></div>`;
-              });
-              if(hasVisibleItems) {
-                  menuHtml += `<div class="category-group" id="${s.id}">`;
-                  if(s.image) menuHtml += `<img src="${s.image}" class="category-img" alt="${s.name}" onerror="this.style.display='none'">`;
-                  menuHtml += `<div class="category-header">${s.name}</div>`;
-                  menuHtml += categoryHtml;
-                  menuHtml += `</div>`;
-              }
+  // --- LOCATION CHECK FIRST ---
+  window.checkLocationFirst = () => {
+      if (!navigator.geolocation) { alert("GPS Not Supported!"); return; }
+      navigator.geolocation.getCurrentPosition((pos) => {
+          const dist = getDistance(pos.coords.latitude, pos.coords.longitude, HOTEL_LAT, HOTEL_LON);
+          if (dist <= ALLOWED_RADIUS) {
+              document.getElementById('location-error').style.display = 'none';
+          } else {
+              document.getElementById('location-error').style.display = 'block';
           }
-      });
-      document.getElementById('food-list').innerHTML = menuHtml || "<p style='text-align:center;'>No items available!</p>";
-      updateCart();
-  }
+      }, (err) => {
+          alert("దయచేసి GPS ఆన్ చేయండి!");
+          document.getElementById('location-error').style.display = 'block';
+      }, { enableHighAccuracy: true });
+  };
 
   function getDistance(lat1, lon1, lat2, lon2) {
       const R = 6371;
       const dLat = (lat2 - lat1) * Math.PI / 180;
       const dLon = (lon2 - lon1) * Math.PI / 180;
       const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      return R * c;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   }
 
-  window.addToCart = (id, name, price) => { if (!cart[name]) cart[name] = { id, price, qty: 1 }; else cart[name].qty++; updateCart(); };
-  window.changeQty = (name, delta) => { cart[name].qty += delta; if (cart[name].qty <= 0) { delete cart[name]; fetchData(); } updateCart(); };
-  
+  // --- START APP ---
+  window.startApp = () => {
+      customerName = document.getElementById('custName').value.trim();
+      if (customerName.length < 2) return alert("దయచేసి మీ పేరు ఇవ్వండి!");
+      document.getElementById('welcome-screen').style.display = 'none';
+      document.getElementById('main-menu').style.display = 'block';
+      const urlParams = new URLSearchParams(window.location.search);
+      document.getElementById('table-display').innerText = "Table Number: " + (urlParams.get('table') || "Counter");
+      fetchData(); 
+  };
+
+  function fetchData() {
+      // Categories Fetch
+      onSnapshot(query(collection(db, "categories"), orderBy("timestamp", "asc")), (snapSectors) => {
+          const sectors = snapSectors.docs.map(doc => ({ id: doc.data().id, name: doc.data().name, image: doc.data().image }));
+          // Menu Items Fetch
+          onSnapshot(collection(db, "menu_items"), (snapItems) => {
+              const menuData = snapItems.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+              renderUI(sectors, menuData);
+          });
+      });
+  }
+
+  function renderUI(sectors, menuData) {
+      let tabHtml = "";
+      sectors.forEach(s => tabHtml += `<a href="#${s.id}" class="tab-link">${s.name}</a>`);
+      document.getElementById('sector-tabs').innerHTML = tabHtml;
+
+      let menuHtml = "";
+      sectors.forEach(s => {
+          const items = menuData.filter(item => item.cat === s.id);
+          if(items.length > 0) {
+              menuHtml += `<div class="category-group" id="${s.id}">
+                  <img src="${s.image}" class="category-img" onerror="this.style.display='none'">
+                  <div class="category-header">${s.name}</div>`;
+              items.forEach(item => {
+                  menuHtml += `<div class="menu-item">
+                      <div class="food-info"><b>${item.name}</b><span>₹${item.price}</span></div>
+                      <div id="btn-${item.id}">
+                        <button class="add-btn" onclick="window.addToCart('${item.id}','${item.name}',${item.price})">ADD</button>
+                      </div>
+                  </div>`;
+              });
+              menuHtml += `</div>`;
+          }
+      });
+      document.getElementById('food-list').innerHTML = menuHtml || "<p style='text-align:center;'>No Items Found</p>";
+      window.updateCart();
+  }
+
+  window.addToCart = (id, name, price) => { 
+      if (!cart[name]) cart[name] = { id, price, qty: 1 }; else cart[name].qty++; 
+      window.updateCart(); 
+  };
+
+  window.changeQty = (name, delta) => { 
+      cart[name].qty += delta; 
+      if (cart[name].qty <= 0) delete cart[name]; 
+      fetchData(); // Refresh UI to show ADD button again
+      window.updateCart(); 
+  };
+
   window.updateCart = () => {
       let count = 0, total = 0, reviewHtml = "";
       for (let name in cart) {
           count += cart[name].qty; total += cart[name].price * cart[name].qty;
           reviewHtml += `<div class="review-item"><span>${name} x ${cart[name].qty}</span><span>₹${cart[name].price * cart[name].qty}</span></div>`;
           const btnArea = document.getElementById(`btn-${cart[name].id}`);
-          if(btnArea) btnArea.innerHTML = `<div class="qty-box"><button class="qty-btn" onclick="changeQty('${name}', -1)">-</button><span>${cart[name].qty}</span><button class="qty-btn" onclick="changeQty('${name}', 1)">+</button></div>`;
+          if(btnArea) btnArea.innerHTML = `<div class="qty-box"><button class="qty-btn" onclick="window.changeQty('${name}', -1)">-</button><span>${cart[name].qty}</span><button class="qty-btn" onclick="window.changeQty('${name}', 1)">+</button></div>`;
       }
       document.getElementById('cartBar').style.display = count > 0 ? 'flex' : 'none';
       document.getElementById('review-list').style.display = count > 0 ? 'block' : 'none';
-      document.getElementById('review-list').innerHTML = count > 0 ? `<div style="font-size:10px; color:#FFD700; padding:5px 10px;">Selected Items:</div>` + reviewHtml : "";
+      document.getElementById('review-list').innerHTML = reviewHtml;
       document.getElementById('total-val').innerText = `${count} Items | ₹${total}`;
   };
 
   window.showReceipt = () => {
-      let html = `<h3 style="margin:0;">Order Summary</h3><div style="text-align:left; margin:15px 0;">`;
+      let html = `<h3>Confirm Order</h3><div style="text-align:left;">`;
       let total = 0;
       for (let name in cart) {
           let itemTotal = cart[name].price * cart[name].qty; total += itemTotal;
-          html += `<div style="display:flex; justify-content:space-between; border-bottom:1px dashed #ccc; padding:8px 0;"><span>${name} x ${cart[name].qty}</span><span>₹${itemTotal}</span></div>`;
+          html += `<div style="display:flex; justify-content:space-between; border-bottom:1px dashed #ccc; padding:5px 0;"><span>${name} (x${cart[name].qty})</span><span>₹${itemTotal}</span></div>`;
       }
-      html += `</div><h3>Total: ₹${total}</h3><button class="finish-btn" id="confirmBtn" onclick="verifyLocation()">CONFIRM ORDER</button><button onclick="document.getElementById('main-modal').style.display='none'" style="background:none; border:none; color:gray; margin-top:10px;">Cancel</button>`;
+      html += `</div><h3>Total: ₹${total}</h3>
+      <button class="finish-btn" onclick="window.submitFinal()">CONFIRM & SEND</button>
+      <button onclick="document.getElementById('main-modal').style.display='none'" style="background:none; border:none; color:gray; margin-top:10px;">Cancel</button>`;
       document.getElementById('modal-content').innerHTML = html;
       document.getElementById('main-modal').style.display = 'flex';
-  };
-
-  window.verifyLocation = () => {
-      const btn = document.getElementById('confirmBtn'); 
-      btn.innerText = "Checking Location..."; 
-      btn.disabled = true;
-      if (!navigator.geolocation) {
-          alert("మీ ఫోన్ Geolocation సపోర్ట్ చేయడం లేదు!");
-          btn.innerText = "CONFIRM ORDER"; btn.disabled = false;
-          return;
-      }
-      navigator.geolocation.getCurrentPosition((pos) => {
-          const dist = getDistance(pos.coords.latitude, pos.coords.longitude, HOTEL_LAT, HOTEL_LON);
-          if(dist <= 100) { submitFinal(); } 
-          else { 
-              alert("క్షమించండి! మీరు మా రెస్టారెంట్ కి 100KM పరిధిలో లేరు."); 
-              btn.innerText = "CONFIRM ORDER"; btn.disabled = false; 
-          }
-      }, (err) => { 
-          alert("దయచేసి మీ ఫోన్ లో GPS ఆన్ చేయండి!"); 
-          btn.innerText = "CONFIRM ORDER"; btn.disabled = false; 
-      }, { enableHighAccuracy: true });
   };
 
   window.submitFinal = async () => {
@@ -234,76 +236,56 @@
       }
       totalBillAmount += currentOrderTotal;
       const urlParams = new URLSearchParams(window.location.search);
+      
       await addDoc(collection(db, "orders"), {
-          customer: customerName, table: urlParams.get('table') || "Counter",
-          items: itemsSummary.join(", "), total: currentOrderTotal, status: "Pending", timestamp: serverTimestamp(), time: new Date().toLocaleString('en-IN')
+          customer: customerName, 
+          table: urlParams.get('table') || "Counter",
+          items: itemsSummary.join(", "), 
+          total: currentOrderTotal, 
+          timestamp: serverTimestamp()
       });
-      alert("ఆర్డర్ విజయవంతమైంది! ✅");
-      cart = {}; document.getElementById('main-modal').style.display = 'none';
-      updateDigitalReceipt();
-      fetchData();
-  };
 
-  window.setRating = (val) => {
-      userRating = val;
-      const stars = document.querySelectorAll('.stars-row span');
-      stars.forEach((s, i) => {
-          if(i < val) s.classList.add('active');
-          else s.classList.remove('active');
-      });
+      alert("ఆర్డర్ కిచెన్ కు పంపబడింది! ✅");
+      cart = {}; 
+      document.getElementById('main-modal').style.display = 'none';
+      updateDigitalReceipt();
   };
 
   function updateDigitalReceipt() {
       const receipt = document.getElementById('digital-receipt');
-      if(consumedItems.length > 0) {
-          receipt.style.display = 'block';
-          const now = new Date();
-          const dateStr = now.toLocaleDateString('en-IN');
-          const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-          let itemsHtml = consumedItems.map(i => `<div class="receipt-line"><span>${i.name} (x${i.qty})</span><span>₹${i.price}</span></div>`).join('');
-          
-          receipt.innerHTML = `
-              <div class="receipt-header">
-                  <div style="font-weight:bold; font-size:20px;">KVS RESTAURANT</div>
-                  <div style="font-size:12px; margin-top:5px;">*** TAX INVOICE ***</div>
+      receipt.style.display = 'block';
+      let itemsHtml = consumedItems.map(i => `<div class="receipt-line"><span>${i.name} (x${i.qty})</span><span>₹${i.price}</span></div>`).join('');
+      receipt.innerHTML = `
+          <div class="receipt-header"><div style="font-weight:bold; font-size:20px;">KVS RUCHULU</div></div>
+          ${itemsHtml}
+          <div class="receipt-total"><span>GRAND TOTAL</span><span>₹${totalBillAmount}</span></div>
+          <div style="text-align:center; margin-top:15px; border-top:1px dashed #000; padding-top:10px;">
+              <p>మా సర్వీస్ మీకు నచ్చిందా?</p>
+              <div class="stars-row">
+                  <span onclick="window.setRating(1)">★</span><span onclick="window.setRating(2)">★</span><span onclick="window.setRating(3)">★</span><span onclick="window.setRating(4)">★</span><span onclick="window.setRating(5)">★</span>
               </div>
-              <div style="font-size:11px; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:5px;">
-                  <div class="receipt-line"><span>DATE: ${dateStr}</span><span>TIME: ${timeStr}</span></div>
-                  <div class="receipt-line"><span>CUST: ${customerName}</span></div>
-              </div>
-              ${itemsHtml}
-              <div class="receipt-total"><span>GRAND TOTAL</span><span>₹${totalBillAmount}</span></div>
-              
-              <div id="rating-container" style="margin-top:20px; text-align:center; padding:10px; border-top:1px dashed #000;">
-                <p style="font-weight:bold; margin-bottom:5px;">మా ఆహారంపై మీ అభిప్రాయం:</p>
-                <div class="stars-row">
-                    <span class="active" onclick="setRating(1)">★</span>
-                    <span class="active" onclick="setRating(2)">★</span>
-                    <span class="active" onclick="setRating(3)">★</span>
-                    <span class="active" onclick="setRating(4)">★</span>
-                    <span class="active" onclick="setRating(5)">★</span>
-                </div>
-                <button onclick="finalSubmitToOwner()" class="finish-btn" style="margin-top:10px;">ORDER DONE ✔️</button>
-              </div>
-              <div class="receipt-footer">--- Thank You! Visit Again ---</div>
-          `;
-          receipt.scrollIntoView({ behavior: 'smooth' });
-      }
+              <button onclick="window.finalBillToOwner()" class="finish-btn">PAY & FINISH</button>
+          </div>`;
   }
 
-  window.finalSubmitToOwner = async () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    await addDoc(collection(db, "owner_bills"), {
-        customer: customerName,
-        table: urlParams.get('table') || "Counter",
-        items: consumedItems.map(i => `${i.name} (${i.qty})`).join(", "),
-        total: totalBillAmount,
-        rating: userRating,
-        timestamp: serverTimestamp(),
-        time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
-    });
-    alert("మీ ఆర్డర్ సక్సెస్‌ఫుల్ గా పూర్తి అయ్యింది! ✅");
-    document.getElementById('rating-container').innerHTML = `<h4 style="color:green; padding:10px;">ఆర్డర్ పూర్తయింది. ధన్యవాదాలు!</h4>`;
+  window.setRating = (val) => {
+      userRating = val;
+      const stars = document.querySelectorAll('.stars-row span');
+      stars.forEach((s, i) => s.style.color = i < val ? '#FFD700' : '#ddd');
+  };
+
+  window.finalBillToOwner = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      await addDoc(collection(db, "owner_bills"), {
+          customer: customerName,
+          table: urlParams.get('table') || "Counter",
+          items: consumedItems.map(i => `${i.name} (${i.qty})`).join(", "),
+          total: totalBillAmount,
+          rating: userRating,
+          timestamp: serverTimestamp()
+      });
+      alert("ధన్యవాదాలు! మీ బిల్లు ఓనర్ కు పంపబడింది.");
+      location.reload();
   };
 
   window.searchFood = () => {
@@ -311,6 +293,9 @@
       let groups = document.getElementsByClassName('category-group');
       for (let g of groups) g.style.display = g.innerText.toLowerCase().includes(query) ? "block" : "none";
   };
+
+  // Run location check on load
+  checkLocationFirst();
 </script>
 </body>
 </html>
