@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KVS Restaurant - Secure Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+
     <style>
         * { box-sizing: border-box; }
         body {
@@ -22,7 +26,6 @@
         .input-group { margin-bottom: 15px; }
         label { display: block; color: #FFD700; margin-bottom: 5px; font-size: 14px; }
         
-        /* Eye Icon Style */
         .pass-wrapper { position: relative; width: 100%; }
         .eye-icon { 
             position: absolute; right: 12px; top: 50%; transform: translateY(-50%); 
@@ -45,13 +48,13 @@
         <div class="box login-box">
             <h2>Owner Login</h2>
             <div class="input-group">
-                <label>User ID</label>
-                <input type="text" id="loginUser" placeholder="మీ User ID ఇవ్వండి">
+                <label>User Email ID</label>
+                <input type="email" id="loginUser" placeholder="మీ ఇమెయిల్ ఇవ్వండి">
             </div>
             <div class="input-group">
-                <label>PIN</label>
+                <label>PIN (Password)</label>
                 <div class="pass-wrapper">
-                    <input type="password" id="loginPass" placeholder="మీ పిన్ ఇవ్వండి">
+                    <input type="password" id="loginPass" placeholder="మీ పాస్‌వర్డ్ ఇవ్వండి">
                     <span class="eye-icon" onclick="toggleVisibility('loginPass')">👁️</span>
                 </div>
             </div>
@@ -66,13 +69,13 @@
                 <input type="text" id="regName" placeholder="ఓనర్ పేరు">
             </div>
             <div class="input-group">
-                <label>Create User ID</label>
-                <input type="text" id="regUserID" placeholder="ఉదా: kvs_owner">
+                <label>Email ID</label>
+                <input type="email" id="regUserID" placeholder="ఉదా: kvs@gmail.com">
             </div>
             <div class="input-group">
-                <label>Set PIN</label>
+                <label>Set PIN (Password)</label>
                 <div class="pass-wrapper">
-                    <input type="password" id="regPin" maxlength="6" placeholder="పిన్ సెట్ చేయండి">
+                    <input type="password" id="regPin" placeholder="కనీసం 6 అంకెలు">
                     <span class="eye-icon" onclick="toggleVisibility('regPin')">👁️</span>
                 </div>
             </div>
@@ -81,67 +84,58 @@
     </div>
 
     <script>
-        // Eye Icon Toggle Function
+        // --- నీ పర్సనల్ Firebase Config వివరాలు ఇక్కడ సెట్ చేశాను ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDYOgbu7yfwlSps_-32frEedWss1qmRQoM",
+            authDomain: "kvs-project-c60d8.firebaseapp.com",
+            projectId: "kvs-project-c60d8",
+            storageBucket: "kvs-project-c60d8.firebasestorage.app",
+            messagingSenderId: "905673301986",
+            appId: "1:905673301986:web:aad1477b1098d7cbf663bb"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
         function toggleVisibility(id) {
             const input = document.getElementById(id);
-            const icon = event.target;
-            if (input.type === "password") {
-                input.type = "text";
-                icon.innerText = "🔒"; // కనిపిస్తున్నప్పుడు లాక్ గుర్తు
-            } else {
-                input.type = "password";
-                icon.innerText = "👁️"; // దాగినప్పుడు కంటి గుర్తు
-            }
+            input.type = (input.type === "password") ? "text" : "password";
         }
 
+        // రిజిస్ట్రేషన్
         function handleRegister() {
-            const name = document.getElementById('regName').value;
-            const userID = document.getElementById('regUserID').value;
+            const email = document.getElementById('regUserID').value;
             const pin = document.getElementById('regPin').value;
 
-            if(name && userID && pin) {
-                const adminData = { 
-                    ownerName: name, 
-                    uID: userID, 
-                    uPIN: pin 
-                };
-                localStorage.setItem('kvs_admin_account', JSON.stringify(adminData));
-                alert("అకౌంట్ సక్సెస్‌ఫుల్ గా క్రియేట్ అయ్యింది! ఇప్పుడు లాగిన్ అవ్వండి.");
-            } else {
-                alert("దయచేసి అన్ని వివరాలు నింపండి!");
-            }
-        }
-
-        function handleLogin() {
-            const enteredUser = document.getElementById('loginUser').value;
-            const enteredPass = document.getElementById('loginPass').value;
-            const savedAccount = JSON.parse(localStorage.getItem('kvs_admin_account'));
-
-            if(!savedAccount) {
-                alert("అకౌంట్ లేదు! ముందుగా రిజిస్టర్ చేసుకోండి.");
+            if(!email.includes("@")) {
+                alert("దయచేసి సరైన Email ID ఇవ్వండి!");
                 return;
             }
 
-            if(enteredUser === savedAccount.uID && enteredPass === savedAccount.uPIN) {
-                alert("స్వాగతం " + savedAccount.ownerName + "!");
-                window.location.href = 'owner.html';
-            } else {
-                alert("తప్పు User ID లేదా PIN! మరొకసారి ప్రయత్నించండి.");
-            }
+            auth.createUserWithEmailAndPassword(email, pin)
+                .then(() => alert("అకౌంట్ సక్సెస్‌ఫుల్ గా క్రియేట్ అయ్యింది!"))
+                .catch((error) => alert("తప్పు: " + error.message));
+        }
+
+        // లాగిన్
+        function handleLogin() {
+            const email = document.getElementById('loginUser').value;
+            const pin = document.getElementById('loginPass').value;
+
+            auth.signInWithEmailAndPassword(email, pin)
+                .then((userCredential) => {
+                    alert("స్వాగతం!");
+                    localStorage.setItem('kvs_user_uid', userCredential.user.uid);
+                    window.location.href = 'owner.html';
+                })
+                .catch((error) => alert("లాగిన్ అవ్వలేదు: " + error.message));
         }
 
         function handleForget() {
-            const savedAccount = JSON.parse(localStorage.getItem('kvs_admin_account'));
-            if(!savedAccount) {
-                alert("వివరాలు ఏవీ లేవు!");
-                return;
-            }
-            
-            const checkName = prompt("రిజిస్టర్ చేసిన Full Name ఇవ్వండి:");
-            if(checkName === savedAccount.ownerName) {
-                alert("మీ User ID: " + savedAccount.uID + "\nమీ PIN: " + savedAccount.uPIN);
-            } else {
-                alert("పేరు మ్యాచ్ అవ్వలేదు!");
+            const email = prompt("మీ రిజిస్టర్డ్ ఇమెయిల్ ఇవ్వండి:");
+            if(email) {
+                auth.sendPasswordResetEmail(email)
+                    .then(() => alert("పాస్‌వర్డ్ రీసెట్ లింక్ ఇమెయిల్ కి పంపాము!"))
+                    .catch((error) => alert(error.message));
             }
         }
     </script>
