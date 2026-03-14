@@ -55,7 +55,7 @@
 <body>
 
 <div class="header">
-    <div class="hotel-name">KVS RESTAURANT - ADMIN</div>
+    <div class="hotel-name">KVS RUCHULU - ADMIN</div>
     <div class="settings-btn" onclick="window.openSettings()">⚙️</div>
 </div>
 
@@ -153,7 +153,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // --- QR LOGIC ---
+    // --- QR LOGIC (FIXED LINK BY GEMINI) ---
     window.showQRSection = () => {
         document.getElementById('mainOptions').style.display = 'none';
         document.getElementById('qrSection').style.display = 'block';
@@ -165,7 +165,9 @@
         if(!tNo) return alert("Table నంబర్ టైప్ చేయండి!");
         if(!ownerId) return alert("దయచేసి మళ్ళీ లాగిన్ అవ్వండి!");
         
-        const url = `https://ramanakarri147-crypto.github.io/KVS-restaurant/index.html?owner=${ownerId}&table=${tNo}`;
+        // గిట్‌హబ్ లింక్ మరియు బ్యాక్-టిక్స్ ఇక్కడ ఫిక్స్ చేశాను
+        const url = `https://ramanakarri147-crypto.github.io/kvs-restaurant/index.html?owner=${ownerId}&table=${tNo}`;
+        
         const qrId = `qr-${tNo}-${Date.now()}`;
         
         const qrCard = document.createElement('div');
@@ -193,7 +195,7 @@
         }
     };
 
-    // --- D-MART STYLE BILLS (ఇక్కడ ఫిక్స్ చేశాను రమణ!) ---
+    // --- BILLS & ORDERS LOGIC ---
     onSnapshot(query(collection(db, "owner_bills"), orderBy("timestamp", "desc")), (snap) => {
         const billContainer = document.getElementById('customerBillList');
         if (snap.empty) { 
@@ -236,7 +238,6 @@
 
     window.markDone = async (id) => { if(confirm("బిల్లు క్లియర్ చేయాలా?")) await deleteDoc(doc(db, "owner_bills", id)); };
 
-    // --- LIVE ORDERS ---
     onSnapshot(query(collection(db, "orders"), orderBy("timestamp", "desc")), (snap) => {
         const list = document.getElementById('orderList');
         list.innerHTML = "";
@@ -256,7 +257,7 @@
         });
     });
 
-    // --- UI HELPERS ---
+    // --- UI & CATEGORY MANAGEMENT ---
     window.openSettings = () => { document.getElementById('settingsModal').style.display = 'block'; window.backToSettings(); };
     window.closeSettings = () => { document.getElementById('settingsModal').style.display = 'none'; };
     window.openBillModal = () => { document.getElementById('billModal').style.display = 'block'; };
@@ -290,10 +291,9 @@
                 total += Number(o.total);
             }
         });
-        document.getElementById('historyContent').innerHTML = htm + `</table><h2 style="text-align:right; color:#25D366; margin-top:20px;">Total: ₹${total}</h2>`;
+        document.getElementById('historyContent').innerHTML = htm + `</table><h2 style="text-align:right; color:#25D366; margin-top:20px;">Total Sales: ₹${total}</h2>`;
     };
 
-    // --- DATA LOADING ---
     onSnapshot(query(collection(db, "categories"), orderBy("timestamp", "asc")), (snap) => {
         const tabs = document.getElementById('tabsContainer'), area = document.getElementById('menuArea');
         const select = document.getElementById('categorySelect'), list = document.getElementById('sectorList');
