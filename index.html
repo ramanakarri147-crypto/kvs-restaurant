@@ -90,7 +90,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, where, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDYOgbu7yfwlSps_-32frEedWss1qmRQoM",
@@ -110,12 +110,16 @@
     let totalBillAmount = 0;
     let userRating = 5;
     
-    // HOTEL LOCATION (Change these if needed)
+    // --- GET OWNER ID FROM URL ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const ownerId = urlParams.get('owner') || "905673301986"; 
+    const tableNum = urlParams.get('table') || "Counter";
+
+    // HOTEL LOCATION (Adjustable)
     const HOTEL_LAT = 17.345585; 
     const HOTEL_LON = 82.542439;
-    const ALLOWED_RADIUS = 0.5; // 500 Meters
+    const ALLOWED_RADIUS = 0.5; 
 
-    // --- GEOLOCATION ---
     window.checkLocationFirst = () => {
         if (!navigator.geolocation) return;
         navigator.geolocation.getCurrentPosition((pos) => {
@@ -134,21 +138,24 @@
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
-    // --- APP LOGIC ---
     window.startApp = () => {
         customerName = document.getElementById('custName').value.trim();
         if (customerName.length < 2) return alert("దయచేసి మీ పేరు ఇవ్వండి!");
         document.getElementById('welcome-screen').style.display = 'none';
         document.getElementById('main-menu').style.display = 'block';
-        const urlParams = new URLSearchParams(window.location.search);
-        document.getElementById('table-display').innerText = "TABLE: " + (urlParams.get('table') || "Counter");
+        document.getElementById('table-display').innerText = "TABLE: " + tableNum;
         fetchData(); 
     };
 
     function fetchData() {
-        onSnapshot(query(collection(db, "categories"), orderBy("timestamp", "asc")), (snapSectors) => {
+        // --- FILTER CATEGORIES BY OWNER ---
+        const catQuery = query(collection(db, "categories"), where("owner", "==", ownerId), orderBy("timestamp", "asc"));
+        onSnapshot(catQuery, (snapSectors) => {
             const sectors = snapSectors.docs.map(doc => ({ id: doc.data().id, name: doc.data().name, image: doc.data().image }));
-            onSnapshot(collection(db, "menu_items"), (snapItems) => {
+            
+            // --- FILTER MENU ITEMS BY OWNER ---
+            const itemQuery = query(collection(db, "menu_items"), where("owner", "==", ownerId));
+            onSnapshot(itemQuery, (snapItems) => {
                 const menuData = snapItems.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderUI(sectors, menuData);
             });
@@ -192,7 +199,8 @@
         if (cart[name].qty <= 0) {
             const id = cart[name].id;
             delete cart[name];
-            document.getElementById(`btn-${id}`).innerHTML = `<button class="add-btn" onclick="window.addToCart('${id}','${name}',${cart[name] ? cart[name].price : 0})">ADD</button>`;
+            // Re-render button logic
+            fetchData();
         }
         window.updateCart(); 
     };
@@ -234,26 +242,22 @@
             consumedItems.push({ name: name, qty: cart[name].qty, price: p });
         }
         totalBillAmount += currentOrderTotal;
-        const urlParams = new URLSearchParams(window.location.search);
         
+        // --- ADD OWNER ID TO ORDER ---
         await addDoc(collection(db, "orders"), {
             customer: customerName, 
-            table: urlParams.get('table') || "Counter",
+            table: tableNum,
             items: itemsSummary.join(", "), 
             total: currentOrderTotal, 
+            owner: ownerId, 
             timestamp: serverTimestamp()
         });
 
         alert("ఆర్డర్ పంపబడింది! ✅");
         cart = {}; 
-        document.querySelectorAll('.qty-box').forEach(el => {
-            const parentId = el.parentElement.id.replace('btn-','');
-            // Reset to ADD button
-            // This is a simple fix, but ideally fetchData should handle it.
-        });
         document.getElementById('main-modal').style.display = 'none';
         updateDigitalReceipt();
-        fetchData(); // Refresh UI to reset ADD buttons
+        fetchData(); 
     };
 
     function updateDigitalReceipt() {
@@ -280,13 +284,14 @@
     };
 
     window.finalBillToOwner = async () => {
-        const urlParams = new URLSearchParams(window.location.search);
+        // --- ADD OWNER ID TO FINAL BILL ---
         await addDoc(collection(db, "owner_bills"), {
             customer: customerName,
-            table: urlParams.get('table') || "Counter",
+            table: tableNum,
             items: consumedItems.map(i => `${i.name} (${i.qty})`).join(", "),
             total: totalBillAmount,
             rating: userRating,
+            owner: ownerId,
             timestamp: serverTimestamp()
         });
         alert("ధన్యవాదాలు! బిల్లు ఓనర్ కి చేరింది.");
