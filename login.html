@@ -26,14 +26,9 @@
         h2 { color: #FFD700; text-align: center; margin-bottom: 20px; }
         .input-group { margin-bottom: 15px; }
         label { display: block; color: #FFD700; margin-bottom: 5px; font-size: 14px; }
-        
         .pass-wrapper { position: relative; width: 100%; }
-        .eye-icon { 
-            position: absolute; right: 12px; top: 50%; transform: translateY(-50%); 
-            cursor: pointer; color: #FFD700; font-size: 18px; z-index: 10;
-        }
-        
-        input { width: 100%; padding: 12px; padding-right: 40px; border-radius: 10px; border: 1px solid #444; background: rgba(255, 255, 255, 0.05); color: white; outline: none; }
+        .eye-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #FFD700; font-size: 18px; z-index: 10; }
+        input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #444; background: rgba(255, 255, 255, 0.05); color: white; outline: none; }
         input:focus { border-color: #FFD700; }
         .btn { background: #FFD700; color: black; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; transition: 0.3s; }
         .btn:hover { background: #fff; }
@@ -43,7 +38,7 @@
 </head>
 <body>
 
-    <div class="hotel-title">KVS RESTAURANT</div>
+    <div class="hotel-title">KVS RUCHULU</div>
 
     <div class="main-container">
         <div class="box login-box">
@@ -93,16 +88,17 @@
             messagingSenderId: "905673301986",
             appId: "1:905673301986:web:aad1477b1098d7cbf663bb"
         };
+        
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
-        const db = firebase.firestore(); // Firestore ని కనెక్ట్ చేశాను
+        const db = firebase.firestore();
 
         function toggleVisibility(id) {
             const input = document.getElementById(id);
             input.type = (input.type === "password") ? "text" : "password";
         }
 
-        // రిజిస్ట్రేషన్
+        // --- REGISTER LOGIC ---
         async function handleRegister() {
             const email = document.getElementById('regUserID').value;
             const pin = document.getElementById('regPin').value;
@@ -115,18 +111,18 @@
 
             try {
                 const userCredential = await auth.createUserWithEmailAndPassword(email, pin);
-                // కొత్తగా రిజిస్టర్ అయినప్పుడు ఓనర్ పేరుని సేవ్ చేయడం
                 await db.collection("owners").doc(userCredential.user.uid).set({
                     ownerName: name,
-                    email: email
+                    email: email,
+                    ownerId: userCredential.user.uid // Storing UID as Owner ID
                 });
-                alert("అకౌంట్ సక్సెస్‌ఫుల్ గా క్రియేట్ అయ్యింది!");
+                alert("అకౌంట్ సక్సెస్‌ఫుల్ గా క్రియేట్ అయ్యింది! ఇప్పుడు లాగిన్ అవ్వండి.");
             } catch (error) {
                 alert("తప్పు: " + error.message);
             }
         }
 
-        // లాగిన్ మరియు ఆటోమేటిక్ లొకేషన్ సేవింగ్
+        // --- LOGIN LOGIC ---
         function handleLogin() {
             const email = document.getElementById('loginUser').value;
             const pin = document.getElementById('loginPass').value;
@@ -134,38 +130,39 @@
             auth.signInWithEmailAndPassword(email, pin)
                 .then((userCredential) => {
                     const uid = userCredential.user.uid;
-                    localStorage.setItem('kvs_user_uid', uid);
+                    
+                    // SAVE OWNER ID LOCALLY
+                    localStorage.setItem('ownerId', uid);
 
-                    // లొకేషన్ పర్మిషన్ అడగడం
+                    // UPDATE LOCATION & REDIRECT
                     if (navigator.geolocation) {
                         navigator.geolocation.getCurrentPosition(async (position) => {
                             const lat = position.coords.latitude;
                             const lng = position.coords.longitude;
 
-                            // హోటల్ లొకేషన్ ని ఓనర్ ఐడి కింద సేవ్ చేస్తున్నాం
                             await db.collection("owners").doc(uid).set({
-                                hotelLocation: { lat: lat, lng: lng }
+                                hotelLocation: { lat: lat, lng: lng },
+                                lastLogin: firebase.firestore.FieldValue.serverTimestamp()
                             }, { merge: true });
 
                             alert("స్వాగతం! మీ హోటల్ లొకేషన్ అప్‌డేట్ అయ్యింది. 📍");
-                            window.location.href = 'owner.html';
+                            window.location.href = 'owner.html'; // Redirect to your Admin page
                         }, (error) => {
-                            // పర్మిషన్ ఇవ్వకపోయినా లాగిన్ అవుతుంది కానీ సెక్యూరిటీ ఉండదు
-                            alert("Location Allow చేస్తేనే దూరం లాక్ సిస్టమ్ పనిచేస్తుంది.");
+                            alert("Location Allow చేస్తేనే దూరం లాక్ సిస్టమ్ పనిచేస్తుంది. కానీ లాగిన్ అవుతున్నారు...");
                             window.location.href = 'owner.html';
                         });
                     } else {
                         window.location.href = 'owner.html';
                     }
                 })
-                .catch((error) => alert("లాగిన్ అవ్వలేదు: " + error.message));
+                .catch((error) => alert("లాగిన్ వివరాలు తప్పు: " + error.message));
         }
 
         function handleForget() {
             const email = prompt("మీ రిజిస్టర్డ్ ఇమెయిల్ ఇవ్వండి:");
             if(email) {
                 auth.sendPasswordResetEmail(email)
-                    .then(() => alert("పాസ്‌వర్డ్ రీసెట్ లింక్ ఇమెయిల్ కి పంపాము!"))
+                    .then(() => alert("పాస్‌వర్డ్ రీసెట్ లింక్ ఇమెయిల్ కి పంపాము!"))
                     .catch((error) => alert(error.message));
             }
         }
