@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KVS Admin - Final Fixed</title>
+    <title>KVS Admin - Final with Customer Link</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Poppins:wght@300;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -11,6 +11,7 @@
         body { margin: 0; background: #1a1a1a; color: white; font-family: 'Poppins', sans-serif; padding: 15px; }
         .header { text-align: center; border-bottom: 2px solid #FFD700; padding-bottom: 10px; margin-bottom: 10px; position: relative; }
         .hotel-name { font-family: 'Righteous', cursive; font-size: 26px; color: #FFD700; text-transform: uppercase; margin-bottom: 5px; }
+        /* కస్టమర్ మెనూ లింక్ స్టైల్ */
         .view-menu-link { display: inline-block; color: #25D366; text-decoration: none; font-size: 12px; border: 1px solid #25D366; padding: 3px 10px; border-radius: 15px; font-weight: bold; }
         .settings-btn { position: absolute; right: 0px; top: 5px; font-size: 22px; cursor: pointer; color: #FFD700; border: 1px solid #FFD700; padding: 5px 10px; border-radius: 50%; }
         .tabs-sector { display: flex; overflow-x: auto; gap: 10px; padding: 10px 0; border-bottom: 1px solid #333; }
@@ -42,7 +43,9 @@
 
 <div class="header">
     <div class="hotel-name">KVS RUCHULU - ADMIN</div>
-    <div id="dynamicMenuLink"></div>
+    <a href="https://ramanakarri147-crypto.github.io/kvs-restaurant/index.html?owner=905673301986&table=1" target="_blank" class="view-menu-link">
+        <i class="fas fa-external-link-alt"></i> View Customer Menu
+    </a>
     <div class="settings-btn" onclick="window.openSettings()">⚙️</div>
 </div>
 
@@ -124,7 +127,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc, getDocs, addDoc, updateDoc, serverTimestamp, writeBatch, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc, getDocs, addDoc, updateDoc, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDYOgbu7yfwlSps_-32frEedWss1qmRQoM",
@@ -138,26 +141,19 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // --- OWNER CONFIG ---
-    const urlParams = new URLSearchParams(window.location.search);
-    const ownerID = urlParams.get('owner') || "905673301986";
-
-    // Set View Menu Link
-    document.getElementById('dynamicMenuLink').innerHTML = `<a href="https://ramanakarri147-crypto.github.io/kvs-restaurant/index.html?owner=${ownerID}&table=1" target="_blank" class="view-menu-link"><i class="fas fa-external-link-alt"></i> View Customer Menu</a>`;
-
-    // --- CATEGORY ---
+    // --- CATEGORY WITH IMAGE ---
     window.addNewCategory = async () => {
         const n = document.getElementById('newCatName').value, f = document.getElementById('newCatImgFile').files[0];
         if(!n || !f) return alert("పేరు మరియు ఇమేజ్ ఇవ్వండి!");
         const r = new FileReader();
         r.onload = async (e) => {
-            await addDoc(collection(db, "categories"), { id: n.toLowerCase().replace(/\s/g,''), name: n, image: e.target.result, owner: ownerID, timestamp: serverTimestamp() });
+            await addDoc(collection(db, "categories"), { id: n.toLowerCase().replace(/\s/g,''), name: n, image: e.target.result, timestamp: serverTimestamp() });
             document.getElementById('newCatName').value = ""; document.getElementById('newCatImgFile').value = "";
         };
         r.readAsDataURL(f);
     };
 
-    // --- QR ---
+    // --- QR GENERATE, DOWNLOAD & PRINT ---
     window.generateQR = () => {
         const num = document.getElementById('qrTableNum').value;
         if(!num) return alert("నెంబర్ ఇవ్వండి!");
@@ -165,7 +161,7 @@
         const qrCard = document.createElement('div'); qrCard.className = "qr-card"; qrCard.id = "qrcard";
         qrCard.innerHTML = `<div id="qro"></div><br><b style="font-size:18px;">TABLE - ${num}</b><br><small>KVS RUCHULU</small>`;
         res.appendChild(qrCard);
-        new QRCode(document.getElementById("qro"), { text: `https://ramanakarri147-crypto.github.io/kvs-restaurant/index.html?owner=${ownerID}&table=${num}`, width: 150, height: 150 });
+        new QRCode(document.getElementById("qro"), { text: `https://ramanakarri147-crypto.github.io/kvs-restaurant/index.html?owner=905673301986&table=${num}`, width: 150, height: 150 });
         document.getElementById('qrActions').style.display = 'flex';
     };
 
@@ -173,13 +169,30 @@
         const canvas = document.querySelector("#qro canvas");
         const link = document.createElement('a');
         link.download = `Table-${document.getElementById('qrTableNum').value}-QR.png`;
-        link.href = canvas.toDataURL(); link.click();
+        link.href = canvas.toDataURL();
+        link.click();
     };
+
     window.printQR = () => { document.getElementById('qrcard').classList.add('print-section'); window.print(); document.getElementById('qrcard').classList.remove('print-section'); };
 
+    // --- SALES HISTORY ---
+    window.showHistory = async (type) => {
+        document.getElementById('mainOptions').style.display = 'none'; document.getElementById('tablesGrid').style.display = 'none'; document.getElementById('historyResult').style.display = 'block';
+        const s = await getDocs(query(collection(db, "owner_bills"), orderBy("timestamp", "desc")));
+        let tot = 0, h = `<table><tr><th>Date/Time</th><th>Table</th><th>Customer</th><th>Total</th></tr>`;
+        s.forEach(d => {
+            const b = d.data();
+            const dateStr = b.timestamp ? new Date(b.timestamp.seconds * 1000).toLocaleString('en-IN', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : (b.time || '');
+            if(type === 'all' || b.table == type) {
+                h += `<tr><td>${dateStr}</td><td>T-${b.table}</td><td>${b.customer || 'Unknown'}</td><td>₹${b.total}</td></tr>`;
+                tot += Number(b.total);
+            }
+        });
+        document.getElementById('historyContent').innerHTML = h + `</table><h2 style="color:#25D366; text-align:center;">Total Sales: ₹${tot}</h2>`;
+    };
+
     // --- LIVE ORDERS ---
-    const qOrders = query(collection(db, "orders"), where("owner", "==", ownerID), orderBy("timestamp", "desc"));
-    onSnapshot(qOrders, (snap) => {
+    onSnapshot(query(collection(db, "orders"), orderBy("timestamp", "desc")), (snap) => {
         const oL = document.getElementById('orderList'); oL.innerHTML = "";
         snap.forEach(d => {
             const o = d.data();
@@ -195,9 +208,17 @@
         });
     });
 
-    // --- BILLS ---
-    const qBills = query(collection(db, "owner_bills"), where("owner", "==", ownerID), orderBy("timestamp", "desc"));
-    onSnapshot(qBills, (snap) => {
+    // --- TABLES GRID ---
+    window.showTablesGrid = () => {
+        document.getElementById('mainOptions').style.display = 'none'; document.getElementById('tablesGrid').style.display = 'block';
+        const g = document.getElementById('grid50'); g.innerHTML = "";
+        for(let i=1; i<=50; i++) {
+            const b = document.createElement('div'); b.className="table-btn"; b.innerText=`T-${i}`; b.onclick=()=>window.showHistory(i); g.appendChild(b);
+        }
+    };
+
+    // --- BILLS LOAD ---
+    onSnapshot(query(collection(db, "owner_bills"), orderBy("timestamp", "desc")), (snap) => {
         const c = document.getElementById('customerBillList'); c.innerHTML = "";
         snap.forEach(d => {
             const b = d.data(); const date = b.timestamp ? new Date(b.timestamp.seconds * 1000).toLocaleString('en-IN') : '';
@@ -214,9 +235,17 @@
         });
     });
 
+    window.printB = (id) => { document.getElementById(id).classList.add('print-section'); window.print(); document.getElementById(id).classList.remove('print-section'); };
+    window.markDone = async (id) => await deleteDoc(doc(db, "owner_bills", id));
+    window.deleteOrder = async (id) => await deleteDoc(doc(db, "orders", id));
+    window.updateMenu = async () => {
+        const n = document.getElementById('itemName').value, p = document.getElementById('itemPrice').value, c = document.getElementById('categorySelect').value;
+        if(n && p) await addDoc(collection(db, "menu_items"), { name: n, price: Number(p), cat: c, status: "visible" });
+        document.getElementById('itemName').value = ""; document.getElementById('itemPrice').value = "";
+    };
+
     // --- MENU LOAD ---
-    const qCats = query(collection(db, "categories"), where("owner", "==", ownerID), orderBy("timestamp", "asc"));
-    onSnapshot(qCats, (snap) => {
+    onSnapshot(query(collection(db, "categories"), orderBy("timestamp", "asc")), (snap) => {
         const t = document.getElementById('tabsContainer'), a = document.getElementById('menuArea'), s = document.getElementById('categorySelect'), l = document.getElementById('sectorList');
         t.innerHTML = ""; a.innerHTML = ""; s.innerHTML = ""; l.innerHTML = "";
         snap.forEach(d => {
@@ -230,8 +259,7 @@
     });
 
     function loadMenu() {
-        const qItems = query(collection(db, "menu_items"), where("owner", "==", ownerID));
-        onSnapshot(qItems, (snap) => {
+        onSnapshot(collection(db, "menu_items"), (snap) => {
             document.querySelectorAll('table[id$="T"]').forEach(t => t.innerHTML = "");
             snap.forEach(d => {
                 const it = d.data(); const tbl = document.getElementById(it.cat + 'T');
@@ -245,32 +273,7 @@
         });
     }
 
-    // --- ACTIONS ---
-    window.updateMenu = async () => {
-        const n = document.getElementById('itemName').value, p = document.getElementById('itemPrice').value, c = document.getElementById('categorySelect').value;
-        if(n && p) await addDoc(collection(db, "menu_items"), { name: n, price: Number(p), cat: c, owner: ownerID, status: "visible" });
-        document.getElementById('itemName').value = ""; document.getElementById('itemPrice').value = "";
-    };
-    window.showHistory = async (type) => {
-        document.getElementById('mainOptions').style.display = 'none'; document.getElementById('tablesGrid').style.display = 'none'; document.getElementById('historyResult').style.display = 'block';
-        const q = query(collection(db, "owner_bills"), where("owner", "==", ownerID), orderBy("timestamp", "desc"));
-        const s = await getDocs(q);
-        let tot = 0, h = `<table><tr><th>Time</th><th>Table</th><th>Customer</th><th>Total</th></tr>`;
-        s.forEach(d => {
-            const b = d.data(); if(type === 'all' || b.table == type) {
-                const dt = b.timestamp ? new Date(b.timestamp.seconds * 1000).toLocaleString('en-IN', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : '';
-                h += `<tr><td>${dt}</td><td>T-${b.table}</td><td>${b.customer}</td><td>₹${b.total}</td></tr>`;
-                tot += Number(b.total);
-            }
-        });
-        document.getElementById('historyContent').innerHTML = h + `</table><h2 style="color:#25D366; text-align:center;">Total: ₹${tot}</h2>`;
-    };
-    window.clearAllHistory = async () => { if(confirm("Clear All?")){ const q = query(collection(db, "owner_bills"), where("owner", "==", ownerID)); const s = await getDocs(q); const b = writeBatch(db); s.forEach(d => b.delete(d.ref)); await b.commit(); window.backToSettings(); } };
-    window.markDone = async (id) => await deleteDoc(doc(db, "owner_bills", id));
-    window.deleteOrder = async (id) => await deleteDoc(doc(db, "orders", id));
-    window.toggleH = async (id, s) => await updateDoc(doc(db, "menu_items", id), { status: s === "hidden" ? "visible" : "hidden" });
-    window.deleteM = async (id) => confirm("Delete?") && await deleteDoc(doc(db, "menu_items", id));
-    window.deleteCat = async (id) => confirm("Delete Category?") && await deleteDoc(doc(db, "categories", id));
+    // --- NAVIGATION ---
     window.openSettings = () => document.getElementById('settingsModal').style.display = 'block';
     window.closeSettings = () => document.getElementById('settingsModal').style.display = 'none';
     window.openBillModal = () => document.getElementById('billModal').style.display = 'block';
@@ -278,14 +281,10 @@
     window.backToSettings = () => { document.getElementById('mainOptions').style.display = 'block'; ['sectorManager', 'tablesGrid', 'historyResult', 'qrSection'].forEach(id => document.getElementById(id).style.display = 'none'); };
     window.showSectorManager = () => { document.getElementById('mainOptions').style.display = 'none'; document.getElementById('sectorManager').style.display = 'block'; };
     window.showQRSection = () => { document.getElementById('mainOptions').style.display = 'none'; document.getElementById('qrSection').style.display = 'block'; };
-    window.showTablesGrid = () => {
-        document.getElementById('mainOptions').style.display = 'none'; document.getElementById('tablesGrid').style.display = 'block';
-        const g = document.getElementById('grid50'); g.innerHTML = "";
-        for(let i=1; i<=50; i++) {
-            const btn = document.createElement('div'); btn.className="table-btn"; btn.innerText=`T-${i}`; btn.onclick=()=>window.showHistory(i); g.appendChild(btn);
-        }
-    };
-    window.printB = (id) => { document.getElementById(id).classList.add('print-section'); window.print(); document.getElementById(id).classList.remove('print-section'); };
+    window.toggleH = async (id, s) => await updateDoc(doc(db, "menu_items", id), { status: s === "hidden" ? "visible" : "hidden" });
+    window.deleteM = async (id) => confirm("Delete?") && await deleteDoc(doc(db, "menu_items", id));
+    window.deleteCat = async (id) => confirm("Delete Category?") && await deleteDoc(doc(db, "categories", id));
+    window.clearAllHistory = async () => { if(confirm("Clear All?")){ const s = await getDocs(collection(db, "owner_bills")); const b = writeBatch(db); s.forEach(d => b.delete(d.ref)); await b.commit(); window.backToSettings(); } };
 </script>
 </body>
 </html>
