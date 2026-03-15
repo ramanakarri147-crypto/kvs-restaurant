@@ -105,7 +105,8 @@
 
     // --- OWNER IDENTIFICATION ---
     const urlParams = new URLSearchParams(window.location.search);
-    const ownerId = urlParams.get('owner') || "905673301986"; // Default if no owner provided
+    // FIX: Fallback to old ID if no owner in URL
+    const ownerId = urlParams.get('owner') || "905673301986"; 
 
     const HOTEL_LAT = 17.345585; 
     const HOTEL_LON = 82.542439;
@@ -139,14 +140,25 @@
     };
 
     function fetchData() {
-        // Filter by Owner ID
-        const catQuery = query(collection(db, "categories"), where("owner", "==", ownerId), orderBy("timestamp", "asc"));
-        onSnapshot(catQuery, (snapSectors) => {
-            const sectors = snapSectors.docs.map(doc => ({ id: doc.data().id, name: doc.data().name, image: doc.data().image }));
+        // FIX: Remove 'where' to see ALL items initially, or use combined logic
+        onSnapshot(collection(db, "categories"), (snapSectors) => {
+            const sectors = [];
+            snapSectors.forEach(doc => {
+                const data = doc.data();
+                // Show if it's the current owner OR old owner data
+                if(!data.owner || data.owner == ownerId || data.owner == "905673301986") {
+                    sectors.push({ id: data.id, name: data.name, image: data.image });
+                }
+            });
             
-            const menuQuery = query(collection(db, "menu_items"), where("owner", "==", ownerId));
-            onSnapshot(menuQuery, (snapItems) => {
-                const menuData = snapItems.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            onSnapshot(collection(db, "menu_items"), (snapItems) => {
+                const menuData = [];
+                snapItems.forEach(doc => {
+                    const data = doc.data();
+                    if(!data.owner || data.owner == ownerId || data.owner == "905673301986") {
+                        menuData.push({ id: doc.id, ...data });
+                    }
+                });
                 renderUI(sectors, menuData);
             });
         });
@@ -186,11 +198,7 @@
 
     window.changeQty = (name, delta) => { 
         cart[name].qty += delta; 
-        if (cart[name].qty <= 0) {
-            const id = cart[name].id;
-            delete cart[name];
-            // After deletion, the UI will re-render in next updateCart
-        }
+        if (cart[name].qty <= 0) { delete cart[name]; fetchData(); }
         window.updateCart(); 
     };
 
@@ -238,7 +246,7 @@
             items: itemsSummary.join(", "), 
             total: currentOrderTotal, 
             timestamp: serverTimestamp(),
-            owner: ownerId // Essential for multi-owner
+            owner: ownerId 
         });
 
         alert("ఆర్డర్ పంపబడింది! ✅");
@@ -279,7 +287,7 @@
             total: totalBillAmount,
             rating: userRating,
             timestamp: serverTimestamp(),
-            owner: ownerId // Essential for multi-owner
+            owner: ownerId
         });
         alert("ధన్యవాదాలు! బిల్లు ఓనర్ కి చేరింది.");
         location.reload();
