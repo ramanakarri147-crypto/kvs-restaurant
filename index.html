@@ -93,10 +93,16 @@
     let consumedItems = [];
     let totalBillAmount = 0;
     let userRating = 5;
+    
+    // ముఖ్యమైన మార్పు: ఇక్కడ స్టాటిక్ ఐడిని తీసేసి లింక్ నుండి మాత్రమే తీసుకునేలా చేశాను.
     let urlParams = new URLSearchParams(window.location.search);
-    let ownerId = urlParams.get('owner') || "905673301986"; 
+    let ownerId = urlParams.get('owner'); 
 
     window.startApp = () => {
+        if (!ownerId) {
+            alert("Error: Invalid Link! (Owner ID missing)");
+            return;
+        }
         customerName = document.getElementById('custName').value.trim();
         if (customerName.length < 2) return alert("దయచేసి మీ పేరు ఇవ్వండి!");
         document.getElementById('welcome-screen').style.display = 'none';
@@ -106,13 +112,12 @@
     };
 
     function fetchData() {
-        // Categories fetch
+        // ఇక్కడ ownerId తో మాత్రమే డేటా ఫిల్టర్ అవుతుంది
         onSnapshot(query(collection(db, "categories"), where("ownerId", "==", ownerId)), (snapSectors) => {
             let sectors = [];
             snapSectors.forEach(d => sectors.push({id: d.id, ...d.data()}));
             sectors.sort((a, b) => a.name.localeCompare(b.name));
 
-            // Items fetch
             onSnapshot(query(collection(db, "menu_items"), where("ownerId", "==", ownerId)), (snapItems) => {
                 const menuData = snapItems.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderUI(sectors, menuData);
@@ -121,8 +126,7 @@
     }
 
     function renderUI(sectors, menuData) {
-        let tabHtml = "";
-        let menuHtml = "";
+        let tabHtml = ""; let menuHtml = "";
         
         sectors.forEach(s => {
             tabHtml += `<a href="#${s.id}" class="tab-link">${s.name}</a>`;
@@ -145,7 +149,7 @@
         });
 
         document.getElementById('sector-tabs').innerHTML = tabHtml;
-        document.getElementById('food-list').innerHTML = menuHtml || "<p style='text-align:center; padding:20px;'>మెనూ లో ఐటమ్స్ లేవు.</p>";
+        document.getElementById('food-list').innerHTML = menuHtml || "<p style='text-align:center; padding:20px;'>ఈ హోటల్ మెనూ లో ఐటమ్స్ లేవు.</p>";
     }
 
     window.addToCart = (id, name, price) => { 
@@ -156,8 +160,7 @@
     window.changeQty = (name, delta) => { 
         cart[name].qty += delta; 
         if (cart[name].qty <= 0) {
-            let id = cart[name].id;
-            let price = cart[name].price;
+            let id = cart[name].id; let price = cart[name].price;
             delete cart[name];
             document.getElementById(`btn-${id}`).innerHTML = `<button class="add-btn" onclick="window.addToCart('${id}','${name}',${price})">ADD</button>`;
         }
@@ -195,8 +198,7 @@
         let itemsArr = []; let orderTotal = 0;
         for (let name in cart) {
             let p = cart[name].price * cart[name].qty;
-            orderTotal += p;
-            itemsArr.push(`${name} (${cart[name].qty})`);
+            orderTotal += p; itemsArr.push(`${name} (${cart[name].qty})`);
             consumedItems.push({ name: name, qty: cart[name].qty, price: p });
         }
         totalBillAmount += orderTotal;
@@ -208,8 +210,7 @@
         });
 
         alert("ఆర్డర్ పంపబడింది! ✅");
-        cart = {}; 
-        document.getElementById('main-modal').style.display = 'none';
+        cart = {}; document.getElementById('main-modal').style.display = 'none';
         updateDigitalReceipt();
     };
 
@@ -238,8 +239,7 @@
             items: consumedItems.map(i => `${i.name} (${i.qty})`).join(", "),
             total: totalBillAmount, rating: userRating, timestamp: serverTimestamp()
         });
-        alert("ధన్యవాదాలు!");
-        location.reload();
+        alert("ధన్యవాదాలు!"); location.reload();
     };
 
     window.searchFood = () => {
