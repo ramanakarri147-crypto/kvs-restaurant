@@ -60,7 +60,6 @@
             <div class="menu-option" onclick="window.showTablesGrid()">🪑 Table History (1-50)</div>
             <div class="menu-option" onclick="window.showQRSection()" style="background:#FFD700; color:black;">🖨️ Generate Table QR</div>
             <div class="menu-option" onclick="window.showHistory('all')" style="background:#25D366; color:white;">💰 View Total Sales</div>
-            <div class="menu-option" onclick="window.clearAllHistory()" style="background:#ff4444; color:white;">⚠️ Reset History</div>
             <div class="menu-option" onclick="window.logout()" style="background:#444; color:white;">🚪 Logout</div>
         </div>
 
@@ -125,7 +124,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, query, orderBy, where, doc, deleteDoc, getDocs, addDoc, updateDoc, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, query, where, doc, deleteDoc, getDocs, addDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -143,15 +142,13 @@
 
     let currentOwnerId = "";
 
-    // --- AUTH CHECK ---
     onAuthStateChanged(auth, (user) => {
         if (user) {
             currentOwnerId = user.uid;
-            localStorage.setItem('ownerId', user.uid);
             setupLinks();
             startListeners();
         } else {
-            window.location.href = "login.html"; // లాగిన్ లేకపోతే పంపించేయాలి
+            window.location.href = "login.html";
         }
     });
 
@@ -161,47 +158,49 @@
         linkArea.innerHTML = `<a href="${url}" target="_blank" class="view-menu-link"><i class="fas fa-external-link-alt"></i> View Customer Menu</a>`;
     }
 
-    // --- LISTENERS (ONLY FOR LOGGED IN OWNER) ---
     function startListeners() {
-        // Categories
-        onSnapshot(query(collection(db, "categories"), where("ownerId", "==", currentOwnerId), orderBy("timestamp", "asc")), (snap) => {
+        // Categories - Index Error నివారించడానికి orderBy తీసేశాను
+        onSnapshot(query(collection(db, "categories"), where("ownerId", "==", currentOwnerId)), (snap) => {
             const t = document.getElementById('tabsContainer'), a = document.getElementById('menuArea'), s = document.getElementById('categorySelect'), l = document.getElementById('sectorList');
             t.innerHTML = ""; a.innerHTML = ""; s.innerHTML = ""; l.innerHTML = "";
-            snap.forEach(d => {
-                const cat = d.data();
+            
+            // Manual Sorting
+            let cats = [];
+            snap.forEach(d => cats.push({id: d.id, ...d.data()}));
+            cats.sort((x, y) => (x.name > y.name) ? 1 : -1);
+
+            cats.forEach(cat => {
                 t.innerHTML += `<a href="#${cat.id}" class="sector-btn">${cat.name}</a>`;
                 a.innerHTML += `<div class="category-card" id="${cat.id}"><img src="${cat.image}"><h3>${cat.name}</h3><table id="${cat.id}T"></table></div>`;
                 s.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
-                l.innerHTML += `<div style="display:flex; justify-content:space-between; padding:5px; border-bottom:1px solid #444;"><span>${cat.name}</span><button class="del-btn" style="padding:2px 8px;" onclick="window.deleteCat('${d.id}')">X</button></div>`;
+                l.innerHTML += `<div style="display:flex; justify-content:space-between; padding:5px; border-bottom:1px solid #444;"><span>${cat.name}</span><button class="del-btn" style="padding:2px 8px;" onclick="window.deleteCat('${cat.id}')">X</button></div>`;
             });
             loadMenu();
         });
 
         // Live Orders
-        onSnapshot(query(collection(db, "orders"), where("ownerId", "==", currentOwnerId), orderBy("timestamp", "desc")), (snap) => {
+        onSnapshot(query(collection(db, "orders"), where("ownerId", "==", currentOwnerId)), (snap) => {
             const oL = document.getElementById('orderList'); oL.innerHTML = "";
             snap.forEach(d => {
                 const o = d.data();
-                const fullDate = o.timestamp ? new Date(o.timestamp.seconds * 1000).toLocaleString('en-IN', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : 'Just now';
                 oL.innerHTML += `<div class="live-order-card">
                     <button class="del-btn" onclick="window.deleteOrder('${d.id}')">Done</button>
                     <b>T-${o.table} | ${o.customer}</b><br><small>${o.items}</small>
                     <div style="display:flex; justify-content:space-between; margin-top:5px; border-top:1px solid #444; padding-top:5px;">
                         <b style="color:#25D366;">₹${o.total}</b>
-                        <span style="font-size:10px; color:#FFD700;">${fullDate}</span>
                     </div>
                 </div>`;
             });
         });
 
         // Bills
-        onSnapshot(query(collection(db, "owner_bills"), where("ownerId", "==", currentOwnerId), orderBy("timestamp", "desc")), (snap) => {
+        onSnapshot(query(collection(db, "owner_bills"), where("ownerId", "==", currentOwnerId)), (snap) => {
             const c = document.getElementById('customerBillList'); c.innerHTML = "";
             snap.forEach(d => {
-                const b = d.data(); const date = b.timestamp ? new Date(b.timestamp.seconds * 1000).toLocaleString('en-IN') : '';
+                const b = d.data();
                 const div = document.createElement('div'); div.className = 'dmart-bill'; div.id = `b-${d.id}`;
                 div.innerHTML = `<div style="text-align:center; border-bottom:1px dashed #000; padding-bottom:5px;"><b>KVS RUCHULU</b></div>
-                    <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:5px;"><span>T-${b.table}</span><span>${date}</span></div>
+                    <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:5px;"><span>T-${b.table}</span></div>
                     <div style="font-size:13px; margin:10px 0;"><b>Name: ${b.customer}</b><br>${b.items}</div>
                     <div style="border-top:1px dashed #000; font-weight:bold; display:flex; justify-content:space-between; padding-top:5px;"><span>Total</span><span>₹${b.total}</span></div>
                     <div class="no-print" style="margin-top:10px; display:flex; gap:5px;">
@@ -228,7 +227,6 @@
         });
     }
 
-    // --- ACTIONS ---
     window.addNewCategory = async () => {
         const n = document.getElementById('newCatName').value, f = document.getElementById('newCatImgFile').files[0];
         if(!n || !f) return alert("పేరు మరియు ఇమేజ్ ఇవ్వండి!");
@@ -265,7 +263,6 @@
         const qrCard = document.createElement('div'); qrCard.className = "qr-card"; qrCard.id = "qrcard";
         qrCard.innerHTML = `<div id="qro"></div><br><b style="font-size:18px;">TABLE - ${num}</b><br><small>KVS RUCHULU</small>`;
         res.appendChild(qrCard);
-        // QR లింక్ లో ఓనర్ ఐడి వెళ్తుంది
         new QRCode(document.getElementById("qro"), { 
             text: `https://ramanakarri147-crypto.github.io/kvs-restaurant/index.html?owner=${currentOwnerId}&table=${num}`, 
             width: 150, height: 150 
@@ -282,20 +279,18 @@
 
     window.showHistory = async (type) => {
         document.getElementById('mainOptions').style.display = 'none'; document.getElementById('tablesGrid').style.display = 'none'; document.getElementById('historyResult').style.display = 'block';
-        const s = await getDocs(query(collection(db, "owner_bills"), where("ownerId", "==", currentOwnerId), orderBy("timestamp", "desc")));
-        let tot = 0, h = `<table><tr><th>Date/Time</th><th>Table</th><th>Customer</th><th>Total</th></tr>`;
+        const s = await getDocs(query(collection(db, "owner_bills"), where("ownerId", "==", currentOwnerId)));
+        let tot = 0, h = `<table><tr><th>Table</th><th>Customer</th><th>Total</th></tr>`;
         s.forEach(d => {
             const b = d.data();
-            const dateStr = b.timestamp ? new Date(b.timestamp.seconds * 1000).toLocaleString('en-IN', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : '';
             if(type === 'all' || b.table == type) {
-                h += `<tr><td>${dateStr}</td><td>T-${b.table}</td><td>${b.customer || 'Unknown'}</td><td>₹${b.total}</td></tr>`;
+                h += `<tr><td>T-${b.table}</td><td>${b.customer || 'Unknown'}</td><td>₹${b.total}</td></tr>`;
                 tot += Number(b.total);
             }
         });
         document.getElementById('historyContent').innerHTML = h + `</table><h2 style="color:#25D366; text-align:center;">Total Sales: ₹${tot}</h2>`;
     };
 
-    // --- OTHER NAVIGATION ---
     window.openSettings = () => document.getElementById('settingsModal').style.display = 'block';
     window.closeSettings = () => document.getElementById('settingsModal').style.display = 'none';
     window.openBillModal = () => document.getElementById('billModal').style.display = 'block';

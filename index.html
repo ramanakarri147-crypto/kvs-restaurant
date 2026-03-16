@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KVS Restaurant - Menu</title>
+    <title>KVS Ruchulu - Digital Menu</title>
     <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { margin: 0; background: #0f0f0f; color: white; font-family: 'Poppins', sans-serif; padding-bottom: 150px; }
         #welcome-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f0f0f; display: flex; align-items: center; justify-content: center; z-index: 9999; }
@@ -16,9 +15,9 @@
         .search-box { width: 90%; padding: 8px 15px; border-radius: 20px; border: none; background: #333; color: white; margin-top:10px; }
         .tabs-container { display: flex; overflow-x: auto; gap: 10px; padding: 12px; background: #111; position: sticky; top: 105px; z-index: 1000; border-bottom: 1px solid #333; scrollbar-width: none; }
         .tab-link { background: #222; color: #FFD700; border: 1px solid #FFD700; padding: 6px 15px; border-radius: 20px; text-decoration: none; font-size: 11px; font-weight: bold; white-space: nowrap; }
-        .category-group { margin: 15px; background: #161616; border-radius: 12px; border: 1px solid #222; overflow: hidden; scroll-margin-top: 170px; }
+        .category-group { margin: 15px; background: #161616; border-radius: 12px; border: 1px solid #222; overflow: hidden; }
         .category-header { background: #FFD700; color: #000; padding: 10px; font-weight: bold; font-size: 14px; text-transform: uppercase; }
-        .category-img { width: 100%; height: 200px; object-fit: cover; display: block; background: #222; border-bottom: 2px solid #FFD700; }
+        .category-img { width: 100%; height: 180px; object-fit: cover; display: block; background: #222; }
         .menu-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #222; align-items: center; }
         .food-info b { display: block; font-size: 15px; }
         .food-info span { color: #FFD700; font-weight: bold; }
@@ -29,26 +28,18 @@
         #review-list { background: #1a1a1a; padding: 10px; border-top: 1px solid #333; max-height: 150px; overflow-y: auto; display: none; }
         .review-item { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 10px; color: #bbb; }
         .cart-bar { background: #25d366; color: white; padding: 10px 20px; display: none; justify-content: space-between; align-items: center; border-radius: 20px 20px 0 0; }
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 10000; }
-        .card { background: white; color: black; padding: 20px; border-radius: 15px; width: 85%; max-width: 350px; text-align: center; }
         .finish-btn { background: #25D366; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; margin-top: 15px; cursor: pointer; font-size: 16px; }
-        .receipt-container { background: white; color: black; margin: 20px; padding: 20px; border-radius: 2px; box-shadow: 0 0 10px rgba(0,0,0,0.5); font-family: 'Courier New', monospace; display: none; }
-        .receipt-header { border-bottom: 2px dashed black; padding-bottom: 10px; text-align: center; margin-bottom: 10px; }
+        .receipt-container { background: white; color: black; margin: 20px; padding: 20px; border-radius: 2px; font-family: 'Courier New', monospace; display: none; }
+        .receipt-header { border-bottom: 2px dashed black; padding-bottom: 10px; text-align: center; margin-bottom: 10px; font-weight: bold; }
         .receipt-line { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 13px; }
         .receipt-total { border-top: 2px dashed black; margin-top: 10px; padding-top: 10px; font-weight: bold; font-size: 16px; display: flex; justify-content: space-between; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 10000; }
+        .card { background: white; color: black; padding: 20px; border-radius: 15px; width: 85%; max-width: 350px; text-align: center; }
         .stars-row { font-size: 30px; margin: 10px 0; color: #ddd; }
-        .stars-row span { cursor: pointer; transition: 0.2s; }
-        .stars-row span.active { color: #FFD700; }
-        #location-error { display:none; position: fixed; top:0; left:0; width:100%; height:100%; background:#000; color:white; z-index:20000; text-align:center; padding-top:100px; }
+        .stars-row span { cursor: pointer; }
     </style>
 </head>
 <body>
-
-<div id="location-error">
-    <h2 style="color:#FFD700;">Location Restricted!</h2>
-    <p>క్షమించండి! మీరు మా రెస్టారెంట్ లోపల ఉంటేనే <br> ఈ మెనూ చూడగలరు.</p>
-    <button onclick="checkLocationFirst()" class="finish-btn" style="width:200px; margin:auto;">RETRY CHECK</button>
-</div>
 
 <div id="welcome-screen">
     <div class="welcome-card">
@@ -62,7 +53,7 @@
 <div id="main-menu" style="display:none;">
     <div class="header">
         <div class="hotel-name">KVS RUCHULU</div>
-        <div id="table-display" style="font-size:12px; color:#FFD700; font-weight:bold;">Table: Loading...</div>
+        <div id="table-display" style="font-size:12px; color:#FFD700;">Table: Loading...</div>
         <input type="text" id="search" class="search-box" placeholder="Search for food..." onkeyup="window.searchFood()">
     </div>
     <div class="tabs-container" id="sector-tabs"></div>
@@ -71,7 +62,7 @@
     <div class="cart-wrapper">
         <div id="review-list"></div>
         <div id="cartBar" class="cart-bar">
-            <span id="total-val" style="font-weight: bold;">0 Items | ₹0</span>
+            <span id="total-val">0 Items | ₹0</span>
             <button onclick="window.showReceipt()" style="background:white; color:#25d366; border:none; padding:10px 18px; border-radius:10px; font-weight:bold;">PLACE ORDER</button>
         </div>
     </div>
@@ -83,7 +74,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDYOgbu7yfwlSps_-32frEedWss1qmRQoM",
@@ -103,30 +94,7 @@
     let totalBillAmount = 0;
     let userRating = 5;
     let urlParams = new URLSearchParams(window.location.search);
-    let ownerId = urlParams.get('owner') || "905673301986"; // Default ID if not found
-
-    // HOTEL LOCATION
-    const HOTEL_LAT = 17.345585; 
-    const HOTEL_LON = 82.542439;
-    const ALLOWED_RADIUS = 0.5;
-
-    window.checkLocationFirst = () => {
-        if (!navigator.geolocation) return;
-        navigator.geolocation.getCurrentPosition((pos) => {
-            const dist = getDistance(pos.coords.latitude, pos.coords.longitude, HOTEL_LAT, HOTEL_LON);
-            document.getElementById('location-error').style.display = (dist <= ALLOWED_RADIUS) ? 'none' : 'block';
-        }, () => {
-            document.getElementById('location-error').style.display = 'block';
-        });
-    };
-
-    function getDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371;
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    }
+    let ownerId = urlParams.get('owner') || "905673301986"; 
 
     window.startApp = () => {
         customerName = document.getElementById('custName').value.trim();
@@ -138,11 +106,13 @@
     };
 
     function fetchData() {
-        // Only fetch categories for this owner
-        onSnapshot(query(collection(db, "categories"), where("ownerId", "==", ownerId), orderBy("timestamp", "asc")), (snapSectors) => {
-            const sectors = snapSectors.docs.map(doc => ({ id: doc.data().id, name: doc.data().name, image: doc.data().image }));
-            
-            // Only fetch menu items for this owner
+        // Categories fetch
+        onSnapshot(query(collection(db, "categories"), where("ownerId", "==", ownerId)), (snapSectors) => {
+            let sectors = [];
+            snapSectors.forEach(d => sectors.push({id: d.id, ...d.data()}));
+            sectors.sort((a, b) => a.name.localeCompare(b.name));
+
+            // Items fetch
             onSnapshot(query(collection(db, "menu_items"), where("ownerId", "==", ownerId)), (snapItems) => {
                 const menuData = snapItems.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderUI(sectors, menuData);
@@ -152,12 +122,12 @@
 
     function renderUI(sectors, menuData) {
         let tabHtml = "";
-        sectors.forEach(s => tabHtml += `<a href="#${s.id}" class="tab-link">${s.name}</a>`);
-        document.getElementById('sector-tabs').innerHTML = tabHtml;
-
         let menuHtml = "";
+        
         sectors.forEach(s => {
+            tabHtml += `<a href="#${s.id}" class="tab-link">${s.name}</a>`;
             const items = menuData.filter(item => item.cat === s.id && item.status !== "hidden");
+            
             if(items.length > 0) {
                 menuHtml += `<div class="category-group" id="${s.id}">
                     <img src="${s.image}" class="category-img" onerror="this.style.display='none'">
@@ -173,8 +143,9 @@
                 menuHtml += `</div>`;
             }
         });
-        document.getElementById('food-list').innerHTML = menuHtml || "<p style='text-align:center; padding:20px;'>ఈ హోటల్ లో ప్రస్తుతం మెనూ అందుబాటులో లేదు.</p>";
-        window.updateCart();
+
+        document.getElementById('sector-tabs').innerHTML = tabHtml;
+        document.getElementById('food-list').innerHTML = menuHtml || "<p style='text-align:center; padding:20px;'>మెనూ లో ఐటమ్స్ లేవు.</p>";
     }
 
     window.addToCart = (id, name, price) => { 
@@ -185,10 +156,10 @@
     window.changeQty = (name, delta) => { 
         cart[name].qty += delta; 
         if (cart[name].qty <= 0) {
-            const id = cart[name].id;
+            let id = cart[name].id;
+            let price = cart[name].price;
             delete cart[name];
-            const btnArea = document.getElementById(`btn-${id}`);
-            if(btnArea) btnArea.innerHTML = `<button class="add-btn" onclick="window.addToCart('${id}','${name}',${cart[name] ? cart[name].price : 0})">ADD</button>`;
+            document.getElementById(`btn-${id}`).innerHTML = `<button class="add-btn" onclick="window.addToCart('${id}','${name}',${price})">ADD</button>`;
         }
         window.updateCart(); 
     };
@@ -198,8 +169,7 @@
         for (let name in cart) {
             count += cart[name].qty; total += cart[name].price * cart[name].qty;
             reviewHtml += `<div class="review-item"><span>${name} x ${cart[name].qty}</span><span>₹${cart[name].price * cart[name].qty}</span></div>`;
-            const btnArea = document.getElementById(`btn-${cart[name].id}`);
-            if(btnArea) btnArea.innerHTML = `<div class="qty-box"><button class="qty-btn" onclick="window.changeQty('${name}', -1)">-</button><span>${cart[name].qty}</span><button class="qty-btn" onclick="window.changeQty('${name}', 1)">+</button></div>`;
+            document.getElementById(`btn-${cart[name].id}`).innerHTML = `<div class="qty-box"><button class="qty-btn" onclick="window.changeQty('${name}', -1)">-</button><span>${cart[name].qty}</span><button class="qty-btn" onclick="window.changeQty('${name}', 1)">+</button></div>`;
         }
         document.getElementById('cartBar').style.display = count > 0 ? 'flex' : 'none';
         document.getElementById('review-list').style.display = count > 0 ? 'block' : 'none';
@@ -208,89 +178,74 @@
     };
 
     window.showReceipt = () => {
-        let html = `<h3 style="margin-bottom:10px;">Confirm Order</h3><div style="text-align:left; max-height:200px; overflow-y:auto;">`;
+        let html = `<h3>Confirm Order</h3><div style="text-align:left;">`;
         let total = 0;
         for (let name in cart) {
-            let itemTotal = cart[name].price * cart[name].qty; total += itemTotal;
-            html += `<div style="display:flex; justify-content:space-between; border-bottom:1px dashed #ccc; padding:8px 0; font-size:14px;"><span>${name} (x${cart[name].qty})</span><span>₹${itemTotal}</span></div>`;
+            let itotal = cart[name].price * cart[name].qty; total += itotal;
+            html += `<div style="display:flex; justify-content:space-between; border-bottom:1px dashed #ccc; padding:5px 0;"><span>${name} (x${cart[name].qty})</span><span>₹${itotal}</span></div>`;
         }
-        html += `</div><h3 style="margin-top:15px; color:#25D366;">Total: ₹${total}</h3>
+        html += `</div><h3 style="color:#25D366;">Total: ₹${total}</h3>
         <button class="finish-btn" onclick="window.submitFinal()">CONFIRM & SEND</button>
-        <button onclick="document.getElementById('main-modal').style.display='none'" style="background:none; border:none; color:gray; margin-top:10px; cursor:pointer;">Go Back</button>`;
+        <button onclick="document.getElementById('main-modal').style.display='none'" style="background:none; border:none; color:gray; margin-top:10px;">Go Back</button>`;
         document.getElementById('modal-content').innerHTML = html;
         document.getElementById('main-modal').style.display = 'flex';
     };
 
     window.submitFinal = async () => {
-        let itemsSummary = []; let currentOrderTotal = 0;
+        let itemsArr = []; let orderTotal = 0;
         for (let name in cart) {
             let p = cart[name].price * cart[name].qty;
-            currentOrderTotal += p;
-            itemsSummary.push(`${name} (${cart[name].qty})`);
+            orderTotal += p;
+            itemsArr.push(`${name} (${cart[name].qty})`);
             consumedItems.push({ name: name, qty: cart[name].qty, price: p });
         }
-        totalBillAmount += currentOrderTotal;
-        
+        totalBillAmount += orderTotal;
+
         await addDoc(collection(db, "orders"), {
-            customer: customerName, 
-            ownerId: ownerId, // Send to correct owner
+            customer: customerName, ownerId: ownerId, 
             table: urlParams.get('table') || "Counter",
-            items: itemsSummary.join(", "), 
-            total: currentOrderTotal, 
-            timestamp: serverTimestamp()
+            items: itemsArr.join(", "), total: orderTotal, timestamp: serverTimestamp()
         });
 
         alert("ఆర్డర్ పంపబడింది! ✅");
         cart = {}; 
         document.getElementById('main-modal').style.display = 'none';
         updateDigitalReceipt();
-        fetchData(); 
     };
 
     function updateDigitalReceipt() {
         const receipt = document.getElementById('digital-receipt');
         receipt.style.display = 'block';
         let itemsHtml = consumedItems.map(i => `<div class="receipt-line"><span>${i.name} (x${i.qty})</span><span>₹${i.price}</span></div>`).join('');
-        receipt.innerHTML = `
-            <div class="receipt-header"><div style="font-weight:bold; font-size:20px;">KVS RUCHULU</div></div>
-            ${itemsHtml}
+        receipt.innerHTML = `<div class="receipt-header">KVS RUCHULU - RECEIPT</div>${itemsHtml}
             <div class="receipt-total"><span>GRAND TOTAL</span><span>₹${totalBillAmount}</span></div>
             <div style="text-align:center; margin-top:15px; border-top:1px dashed #000; padding-top:10px;">
                 <p>మా సర్వీస్ మీకు నచ్చిందా?</p>
-                <div class="stars-row">
-                    <span onclick="window.setRating(1)">★</span><span onclick="window.setRating(2)">★</span><span onclick="window.setRating(3)">★</span><span onclick="window.setRating(4)">★</span><span onclick="window.setRating(5)">★</span>
-                </div>
+                <div class="stars-row"><span onclick="window.setRating(1)">★</span><span onclick="window.setRating(2)">★</span><span onclick="window.setRating(3)">★</span><span onclick="window.setRating(4)">★</span><span onclick="window.setRating(5)">★</span></div>
                 <button onclick="window.finalBillToOwner()" class="finish-btn">PAY & FINISH</button>
             </div>`;
     }
 
     window.setRating = (val) => {
         userRating = val;
-        const stars = document.querySelectorAll('.stars-row span');
-        stars.forEach((s, i) => s.style.color = i < val ? '#FFD700' : '#ddd');
+        document.querySelectorAll('.stars-row span').forEach((s, i) => s.style.color = i < val ? '#FFD700' : '#ddd');
     };
 
     window.finalBillToOwner = async () => {
         await addDoc(collection(db, "owner_bills"), {
-            customer: customerName,
-            ownerId: ownerId, // Send bill to correct owner
+            customer: customerName, ownerId: ownerId, 
             table: urlParams.get('table') || "Counter",
             items: consumedItems.map(i => `${i.name} (${i.qty})`).join(", "),
-            total: totalBillAmount,
-            rating: userRating,
-            timestamp: serverTimestamp()
+            total: totalBillAmount, rating: userRating, timestamp: serverTimestamp()
         });
-        alert("ధన్యవాదాలు! బిల్లు ఓనర్ కి చేరింది.");
+        alert("ధన్యవాదాలు!");
         location.reload();
     };
 
     window.searchFood = () => {
-        let queryStr = document.getElementById('search').value.toLowerCase();
-        let groups = document.getElementsByClassName('category-group');
-        for (let g of groups) g.style.display = g.innerText.toLowerCase().includes(queryStr) ? "block" : "none";
+        let q = document.getElementById('search').value.toLowerCase();
+        document.querySelectorAll('.category-group').forEach(g => g.style.display = g.innerText.toLowerCase().includes(q) ? "block" : "none");
     };
-
-    checkLocationFirst();
 </script>
 </body>
 </html>
