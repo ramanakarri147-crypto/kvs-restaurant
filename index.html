@@ -83,7 +83,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDYOgbu7yfwlSps_-32frEedWss1qmRQoM",
@@ -102,12 +102,10 @@
     let consumedItems = [];
     let totalBillAmount = 0;
     let userRating = 5;
+    let urlParams = new URLSearchParams(window.location.search);
+    let ownerId = urlParams.get('owner') || "905673301986"; // Default ID if not found
 
-    // --- OWNER IDENTIFICATION ---
-    const urlParams = new URLSearchParams(window.location.search);
-    // FIX: Fallback to old ID if no owner in URL
-    const ownerId = urlParams.get('owner') || "905673301986"; 
-
+    // HOTEL LOCATION
     const HOTEL_LAT = 17.345585; 
     const HOTEL_LON = 82.542439;
     const ALLOWED_RADIUS = 0.5;
@@ -140,25 +138,13 @@
     };
 
     function fetchData() {
-        // FIX: Remove 'where' to see ALL items initially, or use combined logic
-        onSnapshot(collection(db, "categories"), (snapSectors) => {
-            const sectors = [];
-            snapSectors.forEach(doc => {
-                const data = doc.data();
-                // Show if it's the current owner OR old owner data
-                if(!data.owner || data.owner == ownerId || data.owner == "905673301986") {
-                    sectors.push({ id: data.id, name: data.name, image: data.image });
-                }
-            });
+        // Only fetch categories for this owner
+        onSnapshot(query(collection(db, "categories"), where("ownerId", "==", ownerId), orderBy("timestamp", "asc")), (snapSectors) => {
+            const sectors = snapSectors.docs.map(doc => ({ id: doc.data().id, name: doc.data().name, image: doc.data().image }));
             
-            onSnapshot(collection(db, "menu_items"), (snapItems) => {
-                const menuData = [];
-                snapItems.forEach(doc => {
-                    const data = doc.data();
-                    if(!data.owner || data.owner == ownerId || data.owner == "905673301986") {
-                        menuData.push({ id: doc.id, ...data });
-                    }
-                });
+            // Only fetch menu items for this owner
+            onSnapshot(query(collection(db, "menu_items"), where("ownerId", "==", ownerId)), (snapItems) => {
+                const menuData = snapItems.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderUI(sectors, menuData);
             });
         });
@@ -187,7 +173,7 @@
                 menuHtml += `</div>`;
             }
         });
-        document.getElementById('food-list').innerHTML = menuHtml || "<p style='text-align:center; padding:20px;'>No items available right now.</p>";
+        document.getElementById('food-list').innerHTML = menuHtml || "<p style='text-align:center; padding:20px;'>ఈ హోటల్ లో ప్రస్తుతం మెనూ అందుబాటులో లేదు.</p>";
         window.updateCart();
     }
 
@@ -198,7 +184,12 @@
 
     window.changeQty = (name, delta) => { 
         cart[name].qty += delta; 
-        if (cart[name].qty <= 0) { delete cart[name]; fetchData(); }
+        if (cart[name].qty <= 0) {
+            const id = cart[name].id;
+            delete cart[name];
+            const btnArea = document.getElementById(`btn-${id}`);
+            if(btnArea) btnArea.innerHTML = `<button class="add-btn" onclick="window.addToCart('${id}','${name}',${cart[name] ? cart[name].price : 0})">ADD</button>`;
+        }
         window.updateCart(); 
     };
 
@@ -242,11 +233,11 @@
         
         await addDoc(collection(db, "orders"), {
             customer: customerName, 
+            ownerId: ownerId, // Send to correct owner
             table: urlParams.get('table') || "Counter",
             items: itemsSummary.join(", "), 
             total: currentOrderTotal, 
-            timestamp: serverTimestamp(),
-            owner: ownerId 
+            timestamp: serverTimestamp()
         });
 
         alert("ఆర్డర్ పంపబడింది! ✅");
@@ -282,12 +273,12 @@
     window.finalBillToOwner = async () => {
         await addDoc(collection(db, "owner_bills"), {
             customer: customerName,
+            ownerId: ownerId, // Send bill to correct owner
             table: urlParams.get('table') || "Counter",
             items: consumedItems.map(i => `${i.name} (${i.qty})`).join(", "),
             total: totalBillAmount,
             rating: userRating,
-            timestamp: serverTimestamp(),
-            owner: ownerId
+            timestamp: serverTimestamp()
         });
         alert("ధన్యవాదాలు! బిల్లు ఓనర్ కి చేరింది.");
         location.reload();

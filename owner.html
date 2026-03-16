@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KVS Admin - Owner Secured</title>
+    <title>KVS Admin - Multi-Owner Professional</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Poppins:wght@300;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -42,9 +42,7 @@
 
 <div class="header">
     <div class="hotel-name">KVS RUCHULU - ADMIN</div>
-    <a id="custLink" href="#" target="_blank" class="view-menu-link">
-        <i class="fas fa-external-link-alt"></i> View Customer Menu
-    </a>
+    <div id="customerMenuLinkArea"></div>
     <div class="settings-btn" onclick="window.openSettings()">⚙️</div>
 </div>
 
@@ -63,7 +61,7 @@
             <div class="menu-option" onclick="window.showQRSection()" style="background:#FFD700; color:black;">🖨️ Generate Table QR</div>
             <div class="menu-option" onclick="window.showHistory('all')" style="background:#25D366; color:white;">💰 View Total Sales</div>
             <div class="menu-option" onclick="window.clearAllHistory()" style="background:#ff4444; color:white;">⚠️ Reset History</div>
-            <div class="menu-option" onclick="localStorage.clear(); window.location.href='login.html';" style="background:#444; color:white;">🚪 Logout</div>
+            <div class="menu-option" onclick="window.logout()" style="background:#444; color:white;">🚪 Logout</div>
         </div>
 
         <div id="sectorManager" style="display:none;">
@@ -127,7 +125,8 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, query, orderBy, doc, deleteDoc, getDocs, addDoc, updateDoc, serverTimestamp, writeBatch, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, query, orderBy, where, doc, deleteDoc, getDocs, addDoc, updateDoc, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDYOgbu7yfwlSps_-32frEedWss1qmRQoM",
@@ -140,50 +139,96 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
 
-    // --- FIX 1: OWNER ID FROM LOCALSTORAGE ---
-    const ownerId = localStorage.getItem('ownerId') || "905673301986";
-    document.getElementById('custLink').href = `index.html?owner=${ownerId}&table=1`;
+    let currentOwnerId = "";
 
-    // --- FIX 2: LOAD DATA (Potha data & Kotha data render cheyadaniki) ---
-    // Categories Load
-    onSnapshot(collection(db, "categories"), (snap) => {
-        const t = document.getElementById('tabsContainer'), a = document.getElementById('menuArea'), s = document.getElementById('categorySelect'), l = document.getElementById('sectorList');
-        t.innerHTML = ""; a.innerHTML = ""; s.innerHTML = ""; l.innerHTML = "";
-        
-        snap.forEach(d => {
-            const cat = d.data();
-            // Prathi owner ki tanu create chesina categories or common categories chupistundi
-            if(!cat.owner || cat.owner == ownerId || cat.owner == "905673301986") {
+    // --- AUTH CHECK ---
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            currentOwnerId = user.uid;
+            localStorage.setItem('ownerId', user.uid);
+            setupLinks();
+            startListeners();
+        } else {
+            window.location.href = "login.html"; // లాగిన్ లేకపోతే పంపించేయాలి
+        }
+    });
+
+    function setupLinks() {
+        const linkArea = document.getElementById('customerMenuLinkArea');
+        const url = `https://ramanakarri147-crypto.github.io/kvs-restaurant/index.html?owner=${currentOwnerId}&table=1`;
+        linkArea.innerHTML = `<a href="${url}" target="_blank" class="view-menu-link"><i class="fas fa-external-link-alt"></i> View Customer Menu</a>`;
+    }
+
+    // --- LISTENERS (ONLY FOR LOGGED IN OWNER) ---
+    function startListeners() {
+        // Categories
+        onSnapshot(query(collection(db, "categories"), where("ownerId", "==", currentOwnerId), orderBy("timestamp", "asc")), (snap) => {
+            const t = document.getElementById('tabsContainer'), a = document.getElementById('menuArea'), s = document.getElementById('categorySelect'), l = document.getElementById('sectorList');
+            t.innerHTML = ""; a.innerHTML = ""; s.innerHTML = ""; l.innerHTML = "";
+            snap.forEach(d => {
+                const cat = d.data();
                 t.innerHTML += `<a href="#${cat.id}" class="sector-btn">${cat.name}</a>`;
                 a.innerHTML += `<div class="category-card" id="${cat.id}"><img src="${cat.image}"><h3>${cat.name}</h3><table id="${cat.id}T"></table></div>`;
                 s.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
                 l.innerHTML += `<div style="display:flex; justify-content:space-between; padding:5px; border-bottom:1px solid #444;"><span>${cat.name}</span><button class="del-btn" style="padding:2px 8px;" onclick="window.deleteCat('${d.id}')">X</button></div>`;
-            }
+            });
+            loadMenu();
         });
-        loadMenuItems();
-    });
 
-    function loadMenuItems() {
-        onSnapshot(collection(db, "menu_items"), (snap) => {
+        // Live Orders
+        onSnapshot(query(collection(db, "orders"), where("ownerId", "==", currentOwnerId), orderBy("timestamp", "desc")), (snap) => {
+            const oL = document.getElementById('orderList'); oL.innerHTML = "";
+            snap.forEach(d => {
+                const o = d.data();
+                const fullDate = o.timestamp ? new Date(o.timestamp.seconds * 1000).toLocaleString('en-IN', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : 'Just now';
+                oL.innerHTML += `<div class="live-order-card">
+                    <button class="del-btn" onclick="window.deleteOrder('${d.id}')">Done</button>
+                    <b>T-${o.table} | ${o.customer}</b><br><small>${o.items}</small>
+                    <div style="display:flex; justify-content:space-between; margin-top:5px; border-top:1px solid #444; padding-top:5px;">
+                        <b style="color:#25D366;">₹${o.total}</b>
+                        <span style="font-size:10px; color:#FFD700;">${fullDate}</span>
+                    </div>
+                </div>`;
+            });
+        });
+
+        // Bills
+        onSnapshot(query(collection(db, "owner_bills"), where("ownerId", "==", currentOwnerId), orderBy("timestamp", "desc")), (snap) => {
+            const c = document.getElementById('customerBillList'); c.innerHTML = "";
+            snap.forEach(d => {
+                const b = d.data(); const date = b.timestamp ? new Date(b.timestamp.seconds * 1000).toLocaleString('en-IN') : '';
+                const div = document.createElement('div'); div.className = 'dmart-bill'; div.id = `b-${d.id}`;
+                div.innerHTML = `<div style="text-align:center; border-bottom:1px dashed #000; padding-bottom:5px;"><b>KVS RUCHULU</b></div>
+                    <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:5px;"><span>T-${b.table}</span><span>${date}</span></div>
+                    <div style="font-size:13px; margin:10px 0;"><b>Name: ${b.customer}</b><br>${b.items}</div>
+                    <div style="border-top:1px dashed #000; font-weight:bold; display:flex; justify-content:space-between; padding-top:5px;"><span>Total</span><span>₹${b.total}</span></div>
+                    <div class="no-print" style="margin-top:10px; display:flex; gap:5px;">
+                        <button style="flex:1; background:#007bff; color:white; border:none; padding:8px; border-radius:5px;" onclick="window.printB('b-${d.id}')">PRINT</button>
+                        <button style="flex:1; background:#ff4444; color:white; border:none; padding:8px; border-radius:5px;" onclick="window.markDone('${d.id}')">DONE</button>
+                    </div>`;
+                c.appendChild(div);
+            });
+        });
+    }
+
+    function loadMenu() {
+        onSnapshot(query(collection(db, "menu_items"), where("ownerId", "==", currentOwnerId)), (snap) => {
             document.querySelectorAll('table[id$="T"]').forEach(t => t.innerHTML = "");
             snap.forEach(d => {
-                const it = d.data();
-                if(!it.owner || it.owner == ownerId || it.owner == "905673301986") {
-                    const tbl = document.getElementById(it.cat + 'T');
-                    if(tbl) {
-                        const row = tbl.insertRow();
-                        const hide = it.status === "hidden";
-                        row.innerHTML = `<td>${it.name}</td><td>₹${it.price}</td><td style="text-align:right;">
-                            <button class="hide-btn" onclick="window.toggleH('${d.id}','${it.status}')" style="color:${hide?'red':'#25D366'}"><i class="fas ${hide?'fa-eye-slash':'fa-eye'}"></i></button>
-                            <button class="del-btn" style="padding:2px 8px;" onclick="window.deleteM('${d.id}')">X</button></td>`;
-                    }
+                const it = d.data(); const tbl = document.getElementById(it.cat + 'T');
+                if(tbl) {
+                    const row = tbl.insertRow(); const hide = it.status === "hidden";
+                    row.innerHTML = `<td>${it.name}</td><td>₹${it.price}</td><td style="text-align:right;">
+                        <button class="hide-btn" onclick="window.toggleH('${d.id}','${it.status}')" style="color:${hide?'red':'#25D366'}"><i class="fas ${hide?'fa-eye-slash':'fa-eye'}"></i></button>
+                        <button class="del-btn" style="padding:2px 8px;" onclick="window.deleteM('${d.id}')">X</button></td>`;
                 }
             });
         });
     }
 
-    // --- CRUD OPERATIONS ---
+    // --- ACTIONS ---
     window.addNewCategory = async () => {
         const n = document.getElementById('newCatName').value, f = document.getElementById('newCatImgFile').files[0];
         if(!n || !f) return alert("పేరు మరియు ఇమేజ్ ఇవ్వండి!");
@@ -193,8 +238,8 @@
                 id: n.toLowerCase().replace(/\s/g,''), 
                 name: n, 
                 image: e.target.result, 
-                timestamp: serverTimestamp(),
-                owner: ownerId 
+                ownerId: currentOwnerId,
+                timestamp: serverTimestamp() 
             });
             document.getElementById('newCatName').value = ""; document.getElementById('newCatImgFile').value = "";
         };
@@ -204,50 +249,53 @@
     window.updateMenu = async () => {
         const n = document.getElementById('itemName').value, p = document.getElementById('itemPrice').value, c = document.getElementById('categorySelect').value;
         if(n && p) await addDoc(collection(db, "menu_items"), { 
-            name: n, price: Number(p), cat: c, status: "visible", owner: ownerId 
+            name: n, 
+            price: Number(p), 
+            cat: c, 
+            ownerId: currentOwnerId,
+            status: "visible" 
         });
         document.getElementById('itemName').value = ""; document.getElementById('itemPrice').value = "";
     };
 
-    // --- LIVE UPDATES ---
-    onSnapshot(query(collection(db, "orders"), where("owner", "==", ownerId), orderBy("timestamp", "desc")), (snap) => {
-        const oL = document.getElementById('orderList'); oL.innerHTML = "";
-        snap.forEach(d => {
-            const o = d.data();
-            oL.innerHTML += `<div class="live-order-card"><button class="del-btn" onclick="window.deleteOrder('${d.id}')">Done</button><b>T-${o.table} | ${o.customer}</b><br><small>${o.items}</small><br><b style="color:#25D366;">₹${o.total}</b></div>`;
-        });
-    });
-
-    onSnapshot(query(collection(db, "owner_bills"), where("owner", "==", ownerId), orderBy("timestamp", "desc")), (snap) => {
-        const c = document.getElementById('customerBillList'); c.innerHTML = "";
-        snap.forEach(d => {
-            const b = d.data();
-            const div = document.createElement('div'); div.className = 'dmart-bill'; div.id = `b-${d.id}`;
-            div.innerHTML = `<div style="text-align:center;"><b>KVS RUCHULU</b></div><br>T-${b.table} | ${b.customer}<br>${b.items}<br><b>Total: ₹${b.total}</b><hr>
-                <button onclick="window.printB('b-${d.id}')">PRINT</button> <button onclick="window.markDone('${d.id}')">DONE</button>`;
-            c.appendChild(div);
-        });
-    });
-
-    // --- QR & OTHER FUNCTIONS ---
     window.generateQR = () => {
         const num = document.getElementById('qrTableNum').value;
+        if(!num) return alert("నెంబర్ ఇవ్వండి!");
         const res = document.getElementById('qrResult'); res.innerHTML = "";
         const qrCard = document.createElement('div'); qrCard.className = "qr-card"; qrCard.id = "qrcard";
-        qrCard.innerHTML = `<div id="qro"></div><br><b>TABLE - ${num}</b>`;
+        qrCard.innerHTML = `<div id="qro"></div><br><b style="font-size:18px;">TABLE - ${num}</b><br><small>KVS RUCHULU</small>`;
         res.appendChild(qrCard);
-        new QRCode(document.getElementById("qro"), { text: `https://ramanakarri147-crypto.github.io/kvs-restaurant/index.html?owner=${ownerId}&table=${num}`, width: 150, height: 150 });
+        // QR లింక్ లో ఓనర్ ఐడి వెళ్తుంది
+        new QRCode(document.getElementById("qro"), { 
+            text: `https://ramanakarri147-crypto.github.io/kvs-restaurant/index.html?owner=${currentOwnerId}&table=${num}`, 
+            width: 150, height: 150 
+        });
         document.getElementById('qrActions').style.display = 'flex';
     };
 
-    window.printB = (id) => { document.getElementById(id).classList.add('print-section'); window.print(); document.getElementById(id).classList.remove('print-section'); };
-    window.markDone = async (id) => await deleteDoc(doc(db, "owner_bills", id));
+    window.logout = async () => { await signOut(auth); window.location.href = "login.html"; };
     window.deleteOrder = async (id) => await deleteDoc(doc(db, "orders", id));
+    window.markDone = async (id) => await deleteDoc(doc(db, "owner_bills", id));
     window.deleteM = async (id) => confirm("Delete?") && await deleteDoc(doc(db, "menu_items", id));
     window.deleteCat = async (id) => confirm("Delete Category?") && await deleteDoc(doc(db, "categories", id));
     window.toggleH = async (id, s) => await updateDoc(doc(db, "menu_items", id), { status: s === "hidden" ? "visible" : "hidden" });
-    
-    // UI Helpers
+
+    window.showHistory = async (type) => {
+        document.getElementById('mainOptions').style.display = 'none'; document.getElementById('tablesGrid').style.display = 'none'; document.getElementById('historyResult').style.display = 'block';
+        const s = await getDocs(query(collection(db, "owner_bills"), where("ownerId", "==", currentOwnerId), orderBy("timestamp", "desc")));
+        let tot = 0, h = `<table><tr><th>Date/Time</th><th>Table</th><th>Customer</th><th>Total</th></tr>`;
+        s.forEach(d => {
+            const b = d.data();
+            const dateStr = b.timestamp ? new Date(b.timestamp.seconds * 1000).toLocaleString('en-IN', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : '';
+            if(type === 'all' || b.table == type) {
+                h += `<tr><td>${dateStr}</td><td>T-${b.table}</td><td>${b.customer || 'Unknown'}</td><td>₹${b.total}</td></tr>`;
+                tot += Number(b.total);
+            }
+        });
+        document.getElementById('historyContent').innerHTML = h + `</table><h2 style="color:#25D366; text-align:center;">Total Sales: ₹${tot}</h2>`;
+    };
+
+    // --- OTHER NAVIGATION ---
     window.openSettings = () => document.getElementById('settingsModal').style.display = 'block';
     window.closeSettings = () => document.getElementById('settingsModal').style.display = 'none';
     window.openBillModal = () => document.getElementById('billModal').style.display = 'block';
@@ -255,7 +303,22 @@
     window.backToSettings = () => { document.getElementById('mainOptions').style.display = 'block'; ['sectorManager', 'tablesGrid', 'historyResult', 'qrSection'].forEach(id => document.getElementById(id).style.display = 'none'); };
     window.showSectorManager = () => { document.getElementById('mainOptions').style.display = 'none'; document.getElementById('sectorManager').style.display = 'block'; };
     window.showQRSection = () => { document.getElementById('mainOptions').style.display = 'none'; document.getElementById('qrSection').style.display = 'block'; };
-    window.showTablesGrid = () => { document.getElementById('mainOptions').style.display = 'none'; document.getElementById('tablesGrid').style.display = 'block'; const g = document.getElementById('grid50'); g.innerHTML = ""; for(let i=1; i<=50; i++) { const b = document.createElement('div'); b.className="table-btn"; b.innerText=`T-${i}`; b.onclick=()=>window.showHistory(i); g.appendChild(b); } };
+    window.showTablesGrid = () => {
+        document.getElementById('mainOptions').style.display = 'none'; document.getElementById('tablesGrid').style.display = 'block';
+        const g = document.getElementById('grid50'); g.innerHTML = "";
+        for(let i=1; i<=50; i++) {
+            const btn = document.createElement('div'); btn.className="table-btn"; btn.innerText=`T-${i}`; btn.onclick=()=>window.showHistory(i); g.appendChild(btn);
+        }
+    };
+    window.printB = (id) => { document.getElementById(id).classList.add('print-section'); window.print(); document.getElementById(id).classList.remove('print-section'); };
+    window.printQR = () => { document.getElementById('qrcard').classList.add('print-section'); window.print(); document.getElementById('qrcard').classList.remove('print-section'); };
+    window.downloadQR = () => {
+        const canvas = document.querySelector("#qro canvas");
+        const link = document.createElement('a');
+        link.download = `Table-${document.getElementById('qrTableNum').value}-QR.png`;
+        link.href = canvas.toDataURL();
+        link.click();
+    };
 </script>
 </body>
 </html>
