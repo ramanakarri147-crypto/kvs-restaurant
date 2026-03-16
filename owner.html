@@ -8,10 +8,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Poppins:wght@300;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        /* నీ పాత స్టైల్స్ అన్నీ ఇక్కడ ఉంటాయి */
         body { margin: 0; background: #1a1a1a; color: white; font-family: 'Poppins', sans-serif; padding: 15px; }
         .header { text-align: center; border-bottom: 2px solid #FFD700; padding-bottom: 10px; margin-bottom: 10px; position: relative; }
         .hotel-name { font-family: 'Righteous', cursive; font-size: 26px; color: #FFD700; text-transform: uppercase; margin-bottom: 5px; }
-        .view-menu-link { display: inline-block; color: #25D366; text-decoration: none; font-size: 12px; border: 1px solid #25D366; padding: 3px 10px; border-radius: 15px; font-weight: bold; margin-top: 5px; }
+        .view-menu-link { display: inline-block; color: #25D366; text-decoration: none; font-size: 12px; border: 1px solid #25D366; padding: 3px 10px; border-radius: 15px; font-weight: bold; }
         .settings-btn { position: absolute; right: 0px; top: 5px; font-size: 22px; cursor: pointer; color: #FFD700; border: 1px solid #FFD700; padding: 5px 10px; border-radius: 50%; }
         .tabs-sector { display: flex; overflow-x: auto; gap: 10px; padding: 10px 0; border-bottom: 1px solid #333; scrollbar-width: none; }
         .sector-btn { background: transparent; color: #FFD700; border: 1px solid #FFD700; padding: 8px 15px; border-radius: 20px; white-space: nowrap; font-size: 13px; font-weight: bold; text-decoration: none; }
@@ -35,7 +36,7 @@
         .qr-card { background: white; padding: 20px; border-radius: 10px; text-align: center; color: black; margin-top: 15px; display: inline-block; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; color: white; }
         th, td { padding: 8px; border-bottom: 1px solid #444; text-align: left; font-size: 12px; }
-        @media print { .no-print { display: none !important; } body * { visibility: hidden; } .print-section, .print-section * { visibility: visible; } .print-section { position: absolute; left: 0; top: 0; width: 100%; } }
+        @media print { body * { visibility: hidden; } .print-section, .print-section * { visibility: visible; } .print-section { position: absolute; left: 0; top: 0; width: 100%; } }
     </style>
 </head>
 <body>
@@ -123,7 +124,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, query, where, doc, deleteDoc, getDocs, addDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, query, where, doc, deleteDoc, getDocs, addDoc, updateDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -141,42 +142,38 @@
 
     let currentOwnerId = "";
 
+    // Auth State Check
     onAuthStateChanged(auth, (user) => {
         if (user) {
             currentOwnerId = user.uid;
-            setupLinks();
+            setupLink();
             startListeners();
         } else {
             window.location.href = "login.html";
         }
     });
 
-    function setupLinks() {
-        const linkArea = document.getElementById('customerMenuLinkArea');
+    function setupLink() {
         const url = `https://ramanakarri147-crypto.github.io/kvs-restaurant/index.html?owner=${currentOwnerId}&table=1`;
-        linkArea.innerHTML = `<a href="${url}" target="_blank" class="view-menu-link"><i class="fas fa-external-link-alt"></i> View Customer Menu</a>`;
+        document.getElementById('customerMenuLinkArea').innerHTML = `<a href="${url}" target="_blank" class="view-menu-link"><i class="fas fa-external-link-alt"></i> View Customer Menu</a>`;
     }
 
     function startListeners() {
-        // Categories Listener
+        // Categories
         onSnapshot(query(collection(db, "categories"), where("ownerId", "==", currentOwnerId)), (snap) => {
             const t = document.getElementById('tabsContainer'), a = document.getElementById('menuArea'), s = document.getElementById('categorySelect'), l = document.getElementById('sectorList');
             t.innerHTML = ""; a.innerHTML = ""; s.innerHTML = ""; l.innerHTML = "";
-            
-            let cats = [];
-            snap.forEach(d => cats.push({id: d.id, ...d.data()}));
-            cats.sort((x, y) => x.name.localeCompare(y.name));
-
-            cats.forEach(cat => {
-                t.innerHTML += `<a href="#${cat.id}" class="sector-btn">${cat.name}</a>`;
-                a.innerHTML += `<div class="category-card" id="${cat.id}"><img src="${cat.image}" onerror="this.style.display='none'"><h3>${cat.name}</h3><table id="${cat.id}T"></table></div>`;
-                s.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
-                l.innerHTML += `<div style="display:flex; justify-content:space-between; padding:5px; border-bottom:1px solid #444;"><span>${cat.name}</span><button class="del-btn" style="padding:2px 8px;" onclick="window.deleteCat('${cat.id}')">X</button></div>`;
+            snap.forEach(d => {
+                const cat = d.data();
+                t.innerHTML += `<a href="#${d.id}" class="sector-btn">${cat.name}</a>`;
+                a.innerHTML += `<div class="category-card" id="${d.id}"><img src="${cat.image}" onerror="this.style.display='none'"><h3>${cat.name}</h3><table id="${d.id}T"></table></div>`;
+                s.innerHTML += `<option value="${d.id}">${cat.name}</option>`;
+                l.innerHTML += `<div style="display:flex; justify-content:space-between; padding:5px; border-bottom:1px solid #444;"><span>${cat.name}</span><button class="del-btn" style="padding:2px 8px;" onclick="window.deleteCat('${d.id}')">X</button></div>`;
             });
             loadMenu();
         });
 
-        // Live Orders Listener
+        // Live Orders
         onSnapshot(query(collection(db, "orders"), where("ownerId", "==", currentOwnerId)), (snap) => {
             const oL = document.getElementById('orderList'); oL.innerHTML = "";
             snap.forEach(d => {
@@ -189,7 +186,7 @@
             });
         });
 
-        // Bills List Listener
+        // Bills List
         onSnapshot(query(collection(db, "owner_bills"), where("ownerId", "==", currentOwnerId)), (snap) => {
             const c = document.getElementById('customerBillList'); c.innerHTML = "";
             snap.forEach(d => {
@@ -210,14 +207,11 @@
 
     function loadMenu() {
         onSnapshot(query(collection(db, "menu_items"), where("ownerId", "==", currentOwnerId)), (snap) => {
-            // అన్ని టేబుల్స్ క్లియర్ చేసి మళ్ళీ రెండర్ చేస్తున్నాం
             document.querySelectorAll('table[id$="T"]').forEach(t => t.innerHTML = "");
             snap.forEach(d => {
-                const it = d.data(); 
-                const tbl = document.getElementById(it.cat + 'T');
+                const it = d.data(); const tbl = document.getElementById(it.cat + 'T');
                 if(tbl) {
-                    const row = tbl.insertRow(); 
-                    const hide = it.status === "hidden";
+                    const row = tbl.insertRow(); const hide = it.status === "hidden";
                     row.innerHTML = `<td>${it.name}</td><td>₹${it.price}</td><td style="text-align:right;">
                         <button class="hide-btn" onclick="window.toggleH('${d.id}','${it.status}')" style="color:${hide?'red':'#25D366'}"><i class="fas ${hide?'fa-eye-slash':'fa-eye'}"></i></button>
                         <button class="del-btn" style="padding:2px 8px;" onclick="window.deleteM('${d.id}')">X</button></td>`;
@@ -231,9 +225,7 @@
         if(!n || !f) return alert("పేరు మరియు ఫోటో ఇవ్వండి!");
         const r = new FileReader();
         r.onload = async (e) => {
-            await addDoc(collection(db, "categories"), { 
-                name: n, image: e.target.result, ownerId: currentOwnerId, timestamp: serverTimestamp() 
-            });
+            await addDoc(collection(db, "categories"), { name: n, image: e.target.result, ownerId: currentOwnerId, timestamp: serverTimestamp() });
             document.getElementById('newCatName').value = ""; document.getElementById('newCatImgFile').value = "";
         };
         r.readAsDataURL(f);
@@ -241,10 +233,8 @@
 
     window.updateMenu = async () => {
         const n = document.getElementById('itemName').value, p = document.getElementById('itemPrice').value, c = document.getElementById('categorySelect').value;
-        if(n && p && c && currentOwnerId) {
-            await addDoc(collection(db, "menu_items"), { 
-                name: n, price: Number(p), cat: c, ownerId: currentOwnerId, status: "visible" 
-            });
+        if(n && p && c) {
+            await addDoc(collection(db, "menu_items"), { name: n, price: Number(p), cat: c, ownerId: currentOwnerId, status: "visible" });
             document.getElementById('itemName').value = ""; document.getElementById('itemPrice').value = "";
         } else alert("అన్ని వివరాలు నింపండి!");
     };
@@ -256,10 +246,7 @@
         const qrCard = document.createElement('div'); qrCard.className = "qr-card"; qrCard.id = "qrcard";
         qrCard.innerHTML = `<div id="qro" style="display:flex; justify-content:center;"></div><br><b style="font-size:18px;">TABLE - ${num}</b><br><small>KVS RUCHULU</small>`;
         res.appendChild(qrCard);
-        new QRCode(document.getElementById("qro"), { 
-            text: `https://ramanakarri147-crypto.github.io/kvs-restaurant/index.html?owner=${currentOwnerId}&table=${num}`, 
-            width: 150, height: 150 
-        });
+        new QRCode(document.getElementById("qro"), { text: `https://ramanakarri147-crypto.github.io/kvs-restaurant/index.html?owner=${currentOwnerId}&table=${num}`, width: 150, height: 150 });
         document.getElementById('qrActions').style.display = 'flex';
     };
 
@@ -284,6 +271,7 @@
         document.getElementById('historyContent').innerHTML = h + `</table><h2 style="color:#25D366; text-align:center;">Total: ₹${tot}</h2>`;
     };
 
+    // UI Helpers
     window.openSettings = () => document.getElementById('settingsModal').style.display = 'block';
     window.closeSettings = () => document.getElementById('settingsModal').style.display = 'none';
     window.openBillModal = () => document.getElementById('billModal').style.display = 'block';
