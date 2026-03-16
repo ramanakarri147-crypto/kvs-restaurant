@@ -35,7 +35,7 @@
         .qr-card { background: white; padding: 20px; border-radius: 10px; text-align: center; color: black; margin-top: 15px; display: inline-block; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; color: white; }
         th, td { padding: 8px; border-bottom: 1px solid #444; text-align: left; font-size: 12px; }
-        @media print { body * { visibility: hidden; } .print-section, .print-section * { visibility: visible; } .print-section { position: absolute; left: 0; top: 0; width: 100%; } }
+        @media print { .no-print { display: none !important; } body * { visibility: hidden; } .print-section, .print-section * { visibility: visible; } .print-section { position: absolute; left: 0; top: 0; width: 100%; } }
     </style>
 </head>
 <body>
@@ -151,7 +151,6 @@
         }
     });
 
-    // రమణ, ఈ ఫంక్షన్ నీ లాగిన్ ఐడిని బట్టి కస్టమర్ మెనూ లింక్ ని మారుస్తుంది.
     function setupLinks() {
         const linkArea = document.getElementById('customerMenuLinkArea');
         const url = `https://ramanakarri147-crypto.github.io/kvs-restaurant/index.html?owner=${currentOwnerId}&table=1`;
@@ -159,7 +158,7 @@
     }
 
     function startListeners() {
-        // Load Categories
+        // Categories Listener
         onSnapshot(query(collection(db, "categories"), where("ownerId", "==", currentOwnerId)), (snap) => {
             const t = document.getElementById('tabsContainer'), a = document.getElementById('menuArea'), s = document.getElementById('categorySelect'), l = document.getElementById('sectorList');
             t.innerHTML = ""; a.innerHTML = ""; s.innerHTML = ""; l.innerHTML = "";
@@ -170,14 +169,14 @@
 
             cats.forEach(cat => {
                 t.innerHTML += `<a href="#${cat.id}" class="sector-btn">${cat.name}</a>`;
-                a.innerHTML += `<div class="category-card" id="${cat.id}"><img src="${cat.image}"><h3>${cat.name}</h3><table id="${cat.id}T"></table></div>`;
+                a.innerHTML += `<div class="category-card" id="${cat.id}"><img src="${cat.image}" onerror="this.style.display='none'"><h3>${cat.name}</h3><table id="${cat.id}T"></table></div>`;
                 s.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
                 l.innerHTML += `<div style="display:flex; justify-content:space-between; padding:5px; border-bottom:1px solid #444;"><span>${cat.name}</span><button class="del-btn" style="padding:2px 8px;" onclick="window.deleteCat('${cat.id}')">X</button></div>`;
             });
             loadMenu();
         });
 
-        // Live Orders
+        // Live Orders Listener
         onSnapshot(query(collection(db, "orders"), where("ownerId", "==", currentOwnerId)), (snap) => {
             const oL = document.getElementById('orderList'); oL.innerHTML = "";
             snap.forEach(d => {
@@ -190,7 +189,7 @@
             });
         });
 
-        // Bills List
+        // Bills List Listener
         onSnapshot(query(collection(db, "owner_bills"), where("ownerId", "==", currentOwnerId)), (snap) => {
             const c = document.getElementById('customerBillList'); c.innerHTML = "";
             snap.forEach(d => {
@@ -211,11 +210,14 @@
 
     function loadMenu() {
         onSnapshot(query(collection(db, "menu_items"), where("ownerId", "==", currentOwnerId)), (snap) => {
+            // అన్ని టేబుల్స్ క్లియర్ చేసి మళ్ళీ రెండర్ చేస్తున్నాం
             document.querySelectorAll('table[id$="T"]').forEach(t => t.innerHTML = "");
             snap.forEach(d => {
-                const it = d.data(); const tbl = document.getElementById(it.cat + 'T');
+                const it = d.data(); 
+                const tbl = document.getElementById(it.cat + 'T');
                 if(tbl) {
-                    const row = tbl.insertRow(); const hide = it.status === "hidden";
+                    const row = tbl.insertRow(); 
+                    const hide = it.status === "hidden";
                     row.innerHTML = `<td>${it.name}</td><td>₹${it.price}</td><td style="text-align:right;">
                         <button class="hide-btn" onclick="window.toggleH('${d.id}','${it.status}')" style="color:${hide?'red':'#25D366'}"><i class="fas ${hide?'fa-eye-slash':'fa-eye'}"></i></button>
                         <button class="del-btn" style="padding:2px 8px;" onclick="window.deleteM('${d.id}')">X</button></td>`;
@@ -239,7 +241,7 @@
 
     window.updateMenu = async () => {
         const n = document.getElementById('itemName').value, p = document.getElementById('itemPrice').value, c = document.getElementById('categorySelect').value;
-        if(n && p && c) {
+        if(n && p && c && currentOwnerId) {
             await addDoc(collection(db, "menu_items"), { 
                 name: n, price: Number(p), cat: c, ownerId: currentOwnerId, status: "visible" 
             });
