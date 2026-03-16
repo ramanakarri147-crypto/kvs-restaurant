@@ -94,9 +94,9 @@
     let totalBillAmount = 0;
     let userRating = 5;
     
-    // ముఖ్యమైన మార్పు: ఇక్కడ స్టాటిక్ ఐడిని తీసేసి లింక్ నుండి మాత్రమే తీసుకునేలా చేశాను.
     let urlParams = new URLSearchParams(window.location.search);
     let ownerId = urlParams.get('owner'); 
+    let tableNum = urlParams.get('table') || "Counter";
 
     window.startApp = () => {
         if (!ownerId) {
@@ -107,17 +107,18 @@
         if (customerName.length < 2) return alert("దయచేసి మీ పేరు ఇవ్వండి!");
         document.getElementById('welcome-screen').style.display = 'none';
         document.getElementById('main-menu').style.display = 'block';
-        document.getElementById('table-display').innerText = "TABLE: " + (urlParams.get('table') || "Counter");
+        document.getElementById('table-display').innerText = "TABLE: " + tableNum;
         fetchData(); 
     };
 
     function fetchData() {
-        // ఇక్కడ ownerId తో మాత్రమే డేటా ఫిల్టర్ అవుతుంది
+        // కేవలం ఈ Owner ID కి సంబంధించిన Categories మాత్రమే
         onSnapshot(query(collection(db, "categories"), where("ownerId", "==", ownerId)), (snapSectors) => {
             let sectors = [];
             snapSectors.forEach(d => sectors.push({id: d.id, ...d.data()}));
             sectors.sort((a, b) => a.name.localeCompare(b.name));
 
+            // కేవలం ఈ Owner ID కి సంబంధించిన Menu Items మాత్రమే
             onSnapshot(query(collection(db, "menu_items"), where("ownerId", "==", ownerId)), (snapItems) => {
                 const menuData = snapItems.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderUI(sectors, menuData);
@@ -149,7 +150,7 @@
         });
 
         document.getElementById('sector-tabs').innerHTML = tabHtml;
-        document.getElementById('food-list').innerHTML = menuHtml || "<p style='text-align:center; padding:20px;'>ఈ హోటల్ మెనూ లో ఐటమ్స్ లేవు.</p>";
+        document.getElementById('food-list').innerHTML = menuHtml || "<p style='text-align:center; padding:20px;'>ఈ హోటల్ మెనూ లో ప్రస్తుతానికి ఐటమ్స్ లేవు.</p>";
     }
 
     window.addToCart = (id, name, price) => { 
@@ -205,7 +206,7 @@
 
         await addDoc(collection(db, "orders"), {
             customer: customerName, ownerId: ownerId, 
-            table: urlParams.get('table') || "Counter",
+            table: tableNum,
             items: itemsArr.join(", "), total: orderTotal, timestamp: serverTimestamp()
         });
 
@@ -235,7 +236,7 @@
     window.finalBillToOwner = async () => {
         await addDoc(collection(db, "owner_bills"), {
             customer: customerName, ownerId: ownerId, 
-            table: urlParams.get('table') || "Counter",
+            table: tableNum,
             items: consumedItems.map(i => `${i.name} (${i.qty})`).join(", "),
             total: totalBillAmount, rating: userRating, timestamp: serverTimestamp()
         });
@@ -244,7 +245,9 @@
 
     window.searchFood = () => {
         let q = document.getElementById('search').value.toLowerCase();
-        document.querySelectorAll('.category-group').forEach(g => g.style.display = g.innerText.toLowerCase().includes(q) ? "block" : "none");
+        document.querySelectorAll('.category-group').forEach(g => {
+            g.style.display = g.innerText.toLowerCase().includes(q) ? "block" : "none";
+        });
     };
 </script>
 </body>
