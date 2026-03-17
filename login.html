@@ -14,21 +14,19 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Poppins', sans-serif; background: #000; color: #fff; min-height: 100vh; overflow: hidden; }
 
-        /* --- 1. NEON WELCOME OVERLAY (వెల్కమ్ స్క్రీన్) --- */
+        /* --- 1. NEON WELCOME OVERLAY --- */
         #welcomeOverlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; z-index: 9999; display: flex; flex-direction: column;
             align-items: center; justify-content: center; transition: 1s ease-in-out;
         }
 
-        /* Background Slider inside Overlay */
         .slider-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
         .slide { position: absolute; width: 100%; height: 100%; background-size: cover; background-position: center; opacity: 0; transform: scale(1.1); transition: opacity 2s ease-in-out, transform 8s linear; }
         .slide.active { opacity: 0.4; transform: scale(1); }
 
         .welcome-box { position: relative; width: 350px; height: 350px; display: flex; align-items: center; justify-content: center; margin-bottom: 30px; }
         
-        /* 3 Chasing Dots Loader */
         .loader { position: absolute; width: 100%; height: 100%; border-radius: 50%; animation: rotate 2.5s linear infinite; }
         .loader::before {
             content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%;
@@ -50,12 +48,12 @@
             20%, 24%, 55% { text-shadow: none; }
         }
 
-        /* Steel Dot Button */
+        /* --- STEEL TAIL BUTTON (నీకు కావాల్సిన మెరిసే తోక బటన్) --- */
         .btn-wrapper {
-            margin-top: 20px; position: relative; width: 220px; height: 60px;
+            margin-top: 50px; position: relative; width: 250px; height: 65px;
             background: #FFD700; border-radius: 50px; display: flex;
             align-items: center; justify-content: center; overflow: hidden;
-            cursor: pointer; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            cursor: pointer; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); z-index: 100;
         }
         .btn-wrapper::before {
             content: ''; position: absolute; width: 150%; height: 400%;
@@ -66,7 +64,7 @@
             content: 'GET STARTED'; position: absolute; inset: 4px; 
             background: #FFD700; border-radius: 50px; display: flex;
             align-items: center; justify-content: center; color: #000;
-            font-size: 18px; font-weight: 900; z-index: 1;
+            font-size: 20px; font-weight: 900; letter-spacing: 1px; z-index: 1;
         }
         @keyframes borderRotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
@@ -149,7 +147,6 @@
     </div>
 
     <script>
-        // --- Slider Logic ---
         const slides = document.querySelectorAll('.slide');
         let currentSlide = 0;
         setInterval(() => {
@@ -158,7 +155,6 @@
             slides[currentSlide].classList.add('active');
         }, 5000);
 
-        // --- Transition Logic ---
         function startApp() {
             document.getElementById('welcomeOverlay').style.opacity = '0';
             setTimeout(() => {
@@ -169,7 +165,7 @@
             }, 1000);
         }
 
-        // --- Firebase Config (నీ ఒరిజినల్ కోడ్) ---
+        // --- Firebase Config (నీ ఒరిజినల్ డేటా) ---
         const firebaseConfig = {
             apiKey: "AIzaSyDYOgbu7yfwlSps_-32frEedWss1qmRQoM",
             authDomain: "kvs-project-c60d8.firebaseapp.com",
@@ -187,7 +183,6 @@
             input.type = (input.type === "password") ? "text" : "password";
         }
 
-        // --- నీ పాత LOGIN & REGISTER లాజిక్ (అస్సలు మార్చలేదు) ---
         function handleLogout() {
             if(confirm("మీరు సిస్టమ్ నుండి లాగ్ అవుట్ అవ్వాలనుకుంటున్నారా?")) {
                 auth.signOut().then(() => { localStorage.removeItem('ownerId'); location.reload(); });
