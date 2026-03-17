@@ -8,7 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Poppins:wght@300;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* నీ పాత స్టైల్స్ అన్నీ ఇక్కడ ఉంటాయి */
         body { margin: 0; background: #1a1a1a; color: white; font-family: 'Poppins', sans-serif; padding: 15px; }
         .header { text-align: center; border-bottom: 2px solid #FFD700; padding-bottom: 10px; margin-bottom: 10px; position: relative; }
         .hotel-name { font-family: 'Righteous', cursive; font-size: 26px; color: #FFD700; text-transform: uppercase; margin-bottom: 5px; }
@@ -83,6 +82,7 @@
                 <div id="qrResult"></div>
                 <div id="qrActions" style="display:none; margin-top:10px; justify-content:center; gap:10px;">
                     <button style="background:#25D366; color:white; border:none; padding:10px; border-radius:5px;" onclick="window.printQR()">Print</button>
+                    <button style="background:#007bff; color:white; border:none; padding:10px; border-radius:5px;" onclick="window.downloadQR()">Download</button>
                 </div>
             </div>
         </div>
@@ -142,7 +142,6 @@
 
     let currentOwnerId = "";
 
-    // Auth State Check
     onAuthStateChanged(auth, (user) => {
         if (user) {
             currentOwnerId = user.uid;
@@ -159,7 +158,6 @@
     }
 
     function startListeners() {
-        // Categories
         onSnapshot(query(collection(db, "categories"), where("ownerId", "==", currentOwnerId)), (snap) => {
             const t = document.getElementById('tabsContainer'), a = document.getElementById('menuArea'), s = document.getElementById('categorySelect'), l = document.getElementById('sectorList');
             t.innerHTML = ""; a.innerHTML = ""; s.innerHTML = ""; l.innerHTML = "";
@@ -173,20 +171,28 @@
             loadMenu();
         });
 
-        // Live Orders
         onSnapshot(query(collection(db, "orders"), where("ownerId", "==", currentOwnerId)), (snap) => {
-            const oL = document.getElementById('orderList'); oL.innerHTML = "";
+            const oL = document.getElementById('orderList'); 
+            oL.innerHTML = "";
             snap.forEach(d => {
                 const o = d.data();
+                let orderTime = "ఇప్పుడే";
+                if(o.timestamp) {
+                    orderTime = new Date(o.timestamp.seconds * 1000).toLocaleString('en-IN', {
+                        day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true
+                    });
+                }
                 oL.innerHTML += `<div class="live-order-card">
                     <button class="del-btn" onclick="window.deleteOrder('${d.id}')">Done</button>
-                    <b>T-${o.table} | ${o.customer}</b><br><small>${o.items}</small>
-                    <div style="margin-top:5px; border-top:1px solid #444; padding-top:5px;"><b style="color:#25D366;">₹${o.total}</b></div>
+                    <div style="font-size: 10px; color: #FFD700; margin-bottom: 5px;"><i class="far fa-clock"></i> ${orderTime}</div>
+                    <b>T-${o.table} | ${o.customer}</b><br><small style="color: #ccc;">${o.items}</small>
+                    <div style="margin-top:8px; border-top:1px dashed #555; padding-top:5px; display: flex; justify-content: space-between;">
+                        <span>Bill:</span><b style="color:#25D366;">₹${o.total}</b>
+                    </div>
                 </div>`;
             });
         });
 
-        // Bills List
         onSnapshot(query(collection(db, "owner_bills"), where("ownerId", "==", currentOwnerId)), (snap) => {
             const c = document.getElementById('customerBillList'); c.innerHTML = "";
             snap.forEach(d => {
@@ -250,6 +256,17 @@
         document.getElementById('qrActions').style.display = 'flex';
     };
 
+    // QR డౌన్‌లోడ్ ఫంక్షన్
+    window.downloadQR = () => {
+        const qrCanvas = document.querySelector('#qro canvas');
+        if (!qrCanvas) return alert("ముందు QR కోడ్ జనరేట్ చేయండి!");
+        const num = document.getElementById('qrTableNum').value;
+        const link = document.createElement('a');
+        link.download = `Table-${num}-QR.png`;
+        link.href = qrCanvas.toDataURL("image/png");
+        link.click();
+    };
+
     window.logout = async () => { await signOut(auth); window.location.href = "login.html"; };
     window.deleteOrder = async (id) => await deleteDoc(doc(db, "orders", id));
     window.markDone = async (id) => await deleteDoc(doc(db, "owner_bills", id));
@@ -257,21 +274,49 @@
     window.deleteCat = async (id) => confirm("Delete Category?") && await deleteDoc(doc(db, "categories", id));
     window.toggleH = async (id, s) => await updateDoc(doc(db, "menu_items", id), { status: s === "hidden" ? "visible" : "hidden" });
 
+    // అప్‌డేటెడ్ హిస్టరీ ఫంక్షన్ (D-Mart స్టైల్)
     window.showHistory = async (type) => {
-        document.getElementById('mainOptions').style.display = 'none'; document.getElementById('tablesGrid').style.display = 'none'; document.getElementById('historyResult').style.display = 'block';
+        document.getElementById('mainOptions').style.display = 'none'; 
+        document.getElementById('tablesGrid').style.display = 'none'; 
+        document.getElementById('historyResult').style.display = 'block';
+        const resCont = document.getElementById('historyContent');
+        resCont.innerHTML = "<p style='text-align:center;'>Loading History...</p>";
+
         const s = await getDocs(query(collection(db, "owner_bills"), where("ownerId", "==", currentOwnerId)));
-        let tot = 0, h = `<table><tr><th>Table</th><th>Total</th></tr>`;
+        let tot = 0, billHTML = "";
+        
         s.forEach(d => {
             const b = d.data();
             if(type === 'all' || b.table == type) {
-                h += `<tr><td>T-${b.table}</td><td>₹${b.total}</td></tr>`;
+                let bDate = "---";
+                if(b.timestamp) {
+                    bDate = new Date(b.timestamp.seconds * 1000).toLocaleString('en-IN', {
+                        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
+                    });
+                }
+                billHTML += `
+                <div class="dmart-bill" style="margin-bottom:20px; border:1px solid #ddd; border-radius:8px;">
+                    <div style="text-align:center; border-bottom:1px dashed #000; padding-bottom:5px; margin-bottom:5px;">
+                        <b style="font-size:16px;">KVS RUCHULU</b><br><small>History Bill</small>
+                    </div>
+                    <div style="font-size:11px; display:flex; justify-content:space-between; margin-bottom:5px;">
+                        <span><b>Table: ${b.table}</b></span><span>${bDate}</span>
+                    </div>
+                    <div style="font-size:12px; border-bottom:1px dashed #000; padding-bottom:5px; margin-bottom:5px;">
+                        <b>Customer: ${b.customer}</b>
+                    </div>
+                    <div style="font-size:12px; min-height:40px;">${b.items.replace(/\n/g, '<br>')}</div>
+                    <div style="border-top:1px dashed #000; font-weight:bold; display:flex; justify-content:space-between; padding-top:5px; margin-top:5px; font-size:14px;">
+                        <span>TOTAL</span><span>₹${b.total}</span>
+                    </div>
+                </div>`;
                 tot += Number(b.total);
             }
         });
-        document.getElementById('historyContent').innerHTML = h + `</table><h2 style="color:#25D366; text-align:center;">Total: ₹${tot}</h2>`;
+        resCont.innerHTML = billHTML || "<p style='text-align:center;'>No History!</p>";
+        if(billHTML) resCont.innerHTML += `<div style="background:#25D366; color:white; padding:15px; border-radius:10px; text-align:center;"><h2>Total: ₹${tot}</h2></div>`;
     };
 
-    // UI Helpers
     window.openSettings = () => document.getElementById('settingsModal').style.display = 'block';
     window.closeSettings = () => document.getElementById('settingsModal').style.display = 'none';
     window.openBillModal = () => document.getElementById('billModal').style.display = 'block';
