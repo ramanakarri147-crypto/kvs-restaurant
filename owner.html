@@ -28,14 +28,20 @@
         .hide-btn { background: #444; color: white; border: none; padding: 6px 10px; border-radius: 5px; cursor: pointer; float: right; margin-right:5px; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 5000; padding: 15px; overflow-y: auto; }
         .modal-content { max-width: 550px; margin: auto; background: #1a1a1a; padding: 20px; border-radius: 15px; border: 1.5px solid #FFD700; position: relative; }
-        .dmart-bill { background: white; color: black; padding: 20px; margin-bottom: 20px; font-family: 'Courier New', monospace; }
+        
+        .dmart-bill { background: white !important; color: black !important; padding: 15px; margin-bottom: 20px; font-family: 'Courier New', monospace; border: 1px solid #000; }
+        .dmart-bill * { color: black !important; }
+        .bill-stars { color: #f39c12 !important; text-align: center; font-size: 18px; margin-bottom: 5px; }
+        .bill-info-row { display: flex; flex-direction: column; font-size: 11px; margin-bottom: 5px; border-bottom: 1px dashed #000; padding-bottom: 5px; }
+        .bill-items-area { margin: 10px 0; font-size: 12px; line-height: 1.5; }
+
         .grid-container { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 15px; }
         .table-btn { background: #333; color: #FFD700; border: 1px solid #FFD700; padding: 8px; border-radius: 5px; cursor: pointer; text-align: center; font-size: 11px; }
         .menu-option { background: #333; padding: 15px; margin: 10px 0; border-radius: 8px; cursor: pointer; text-align: center; color: #FFD700; font-weight: bold; border: 1px solid #444; }
         .qr-card { background: white; padding: 20px; border-radius: 10px; text-align: center; color: black; margin-top: 15px; display: inline-block; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; color: white; }
         th, td { padding: 8px; border-bottom: 1px solid #444; text-align: left; font-size: 12px; }
-        @media print { body * { visibility: hidden; } .print-section, .print-section * { visibility: visible; } .print-section { position: absolute; left: 0; top: 0; width: 100%; } }
+        @media print { body * { visibility: hidden; } .print-section, .print-section * { visibility: visible; } .print-section { position: absolute; left: 0; top: 0; width: 100%; border:none; } .no-print { display:none !important; } }
     </style>
 </head>
 <body>
@@ -54,7 +60,6 @@
     <div class="modal-content">
         <button onclick="window.closeSettings()" style="float:right; background:red; color:white; border:none; padding:5px 10px; cursor:pointer; border-radius:5px;">X</button>
         <h2 style="color:#FFD700; text-align:center;">Admin Settings</h2>
-        
         <div id="mainOptions">
             <div class="menu-option" onclick="window.showSectorManager()">📁 Manage Categories</div>
             <div class="menu-option" onclick="window.showTablesGrid()">🪑 Table History (1-50)</div>
@@ -62,7 +67,6 @@
             <div class="menu-option" onclick="window.showHistory('all')" style="background:#25D366; color:white;">💰 View Total Sales</div>
             <div class="menu-option" onclick="window.logout()" style="background:#444; color:white;">🚪 Logout</div>
         </div>
-
         <div id="sectorManager" style="display:none;">
             <button onclick="window.backToSettings()" style="background:#555; color:white; padding:5px 10px; border-radius:5px;">⬅ Back</button>
             <div style="margin-top:15px; background:#333; padding:10px; border-radius:8px;">
@@ -73,7 +77,6 @@
             </div>
             <div id="sectorList" style="margin-top:10px;"></div>
         </div>
-
         <div id="qrSection" style="display:none;">
             <button onclick="window.backToSettings()" style="background:#555; color:white; padding:5px 10px; border-radius:5px;">⬅ Back</button>
             <div style="text-align:center; margin-top:15px;">
@@ -86,12 +89,10 @@
                 </div>
             </div>
         </div>
-
         <div id="tablesGrid" style="display:none;">
             <button onclick="window.backToSettings()" style="background:#555; color:white; padding:5px 10px; border-radius:5px;">⬅ Back</button>
             <div class="grid-container" id="grid50"></div>
         </div>
-
         <div id="historyResult" style="display:none;">
             <button onclick="window.backToSettings()" style="background:#555; color:white; padding:5px 10px; border-radius:5px;">⬅ Back</button>
             <div id="historyContent" style="margin-top:15px;"></div>
@@ -142,6 +143,13 @@
 
     let currentOwnerId = "";
 
+    // Helper function for Date and Time
+    function getDisplayTime(ts) {
+        if (!ts) return "ఇప్పుడే";
+        const d = ts.toDate ? ts.toDate() : new Date(ts.seconds * 1000);
+        return d.toLocaleString('en-IN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true });
+    }
+
     onAuthStateChanged(auth, (user) => {
         if (user) {
             currentOwnerId = user.uid;
@@ -176,12 +184,7 @@
             oL.innerHTML = "";
             snap.forEach(d => {
                 const o = d.data();
-                let orderTime = "ఇప్పుడే";
-                if(o.timestamp) {
-                    orderTime = new Date(o.timestamp.seconds * 1000).toLocaleString('en-IN', {
-                        day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true
-                    });
-                }
+                const orderTime = getDisplayTime(o.timestamp);
                 oL.innerHTML += `<div class="live-order-card">
                     <button class="del-btn" onclick="window.deleteOrder('${d.id}')">Done</button>
                     <div style="font-size: 10px; color: #FFD700; margin-bottom: 5px;"><i class="far fa-clock"></i> ${orderTime}</div>
@@ -197,10 +200,25 @@
             const c = document.getElementById('customerBillList'); c.innerHTML = "";
             snap.forEach(d => {
                 const b = d.data();
+                const stars = "★".repeat(b.rating || 0) + "☆".repeat(5 - (b.rating || 0));
+                
+                let fullTime = getDisplayTime(b.timestamp);
+                let bDate = fullTime.split(',')[0];
+                let bTime = fullTime.split(',')[1] || "";
+
                 const div = document.createElement('div'); div.className = 'dmart-bill'; div.id = `b-${d.id}`;
-                div.innerHTML = `<div style="text-align:center; border-bottom:1px dashed #000; padding-bottom:5px;"><b>KVS RUCHULU</b></div>
-                    <div style="display:flex; justify-content:space-between; font-size:12px; margin:5px 0;"><span>Table: ${b.table}</span></div>
-                    <div style="font-size:13px; margin:10px 0;"><b>Name: ${b.customer}</b><br>${b.items}</div>
+                div.innerHTML = `
+                    <div class="bill-stars">${stars}</div>
+                    <div style="text-align:center; border-bottom:1px dashed #000; padding-bottom:5px;"><b>KVS RUCHULU</b></div>
+                    <div class="bill-info-row">
+                        <span>Table: ${b.table}</span>
+                        <span>Date : ${bDate}</span>
+                        <span>Time : ${bTime}</span>
+                    </div>
+                    <div class="bill-items-area">
+                        <b>Name: ${b.customer}</b><br>
+                        ${b.items.replace(/\n/g, '<br>')}
+                    </div>
                     <div style="border-top:1px dashed #000; font-weight:bold; display:flex; justify-content:space-between; padding-top:5px;"><span>Total</span><span>₹${b.total}</span></div>
                     <div class="no-print" style="margin-top:10px; display:flex; gap:5px;">
                         <button style="flex:1; background:#007bff; color:white; border:none; padding:8px; border-radius:5px;" onclick="window.printB('b-${d.id}')">PRINT</button>
@@ -211,6 +229,7 @@
         });
     }
 
+    // loadMenu and other functions remains exactly as provided
     function loadMenu() {
         onSnapshot(query(collection(db, "menu_items"), where("ownerId", "==", currentOwnerId)), (snap) => {
             document.querySelectorAll('table[id$="T"]').forEach(t => t.innerHTML = "");
@@ -256,7 +275,6 @@
         document.getElementById('qrActions').style.display = 'flex';
     };
 
-    // QR డౌన్‌లోడ్ ఫంక్షన్
     window.downloadQR = () => {
         const qrCanvas = document.querySelector('#qro canvas');
         if (!qrCanvas) return alert("ముందు QR కోడ్ జనరేట్ చేయండి!");
@@ -274,7 +292,6 @@
     window.deleteCat = async (id) => confirm("Delete Category?") && await deleteDoc(doc(db, "categories", id));
     window.toggleH = async (id, s) => await updateDoc(doc(db, "menu_items", id), { status: s === "hidden" ? "visible" : "hidden" });
 
-    // అప్‌డేటెడ్ హిస్టరీ ఫంక్షన్ (D-Mart స్టైల్)
     window.showHistory = async (type) => {
         document.getElementById('mainOptions').style.display = 'none'; 
         document.getElementById('tablesGrid').style.display = 'none'; 
@@ -288,24 +305,26 @@
         s.forEach(d => {
             const b = d.data();
             if(type === 'all' || b.table == type) {
-                let bDate = "---";
-                if(b.timestamp) {
-                    bDate = new Date(b.timestamp.seconds * 1000).toLocaleString('en-IN', {
-                        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
-                    });
-                }
+                const stars = "★".repeat(b.rating || 0) + "☆".repeat(5 - (b.rating || 0));
+                let fullTime = getDisplayTime(b.timestamp);
+                let bDate = fullTime.split(',')[0];
+                let bTime = fullTime.split(',')[1] || "";
+                
                 billHTML += `
                 <div class="dmart-bill" style="margin-bottom:20px; border:1px solid #ddd; border-radius:8px;">
+                    <div class="bill-stars">${stars}</div>
                     <div style="text-align:center; border-bottom:1px dashed #000; padding-bottom:5px; margin-bottom:5px;">
                         <b style="font-size:16px;">KVS RUCHULU</b><br><small>History Bill</small>
                     </div>
-                    <div style="font-size:11px; display:flex; justify-content:space-between; margin-bottom:5px;">
-                        <span><b>Table: ${b.table}</b></span><span>${bDate}</span>
+                    <div class="bill-info-row">
+                        <span><b>Table: ${b.table}</b></span>
+                        <span>Date: ${bDate}</span>
+                        <span>Time: ${bTime}</span>
                     </div>
-                    <div style="font-size:12px; border-bottom:1px dashed #000; padding-bottom:5px; margin-bottom:5px;">
-                        <b>Customer: ${b.customer}</b>
+                    <div class="bill-items-area">
+                        <b>Customer: ${b.customer}</b><br>
+                        ${b.items.replace(/\n/g, '<br>')}
                     </div>
-                    <div style="font-size:12px; min-height:40px;">${b.items.replace(/\n/g, '<br>')}</div>
                     <div style="border-top:1px dashed #000; font-weight:bold; display:flex; justify-content:space-between; padding-top:5px; margin-top:5px; font-size:14px;">
                         <span>TOTAL</span><span>₹${b.total}</span>
                     </div>

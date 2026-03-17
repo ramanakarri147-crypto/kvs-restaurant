@@ -7,7 +7,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* నీ పాత స్టైల్స్ అన్నీ ఇక్కడ ఉంటాయి */
         body { margin: 0; background: #0f0f0f; color: white; font-family: 'Poppins', sans-serif; padding-bottom: 150px; }
         #welcome-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f0f0f; display: flex; align-items: center; justify-content: center; z-index: 9999; }
         .welcome-card { background: #1a1a1a; padding: 30px; border-radius: 20px; border: 2px solid #FFD700; text-align: center; width: 85%; max-width: 350px; }
@@ -23,9 +22,13 @@
         .menu-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #222; align-items: center; }
         .food-info b { display: block; font-size: 15px; }
         .food-info span { color: #FFD700; font-weight: bold; }
-        .add-btn { background: #FFD700; color: #000; border: none; padding: 6px 18px; border-radius: 5px; font-weight: bold; cursor: pointer; }
-        .qty-box { display: flex; align-items: center; gap: 12px; background: #333; padding: 5px 10px; border-radius: 5px; border: 1px solid #FFD700; }
-        .qty-btn { background: none; border: none; color: #FFD700; font-size: 18px; font-weight: bold; cursor: pointer; }
+        
+        /* Quantity Button Styling */
+        .add-btn { background: #FFD700; color: #000; border: none; padding: 6px 18px; border-radius: 5px; font-weight: bold; cursor: pointer; min-width: 70px; }
+        .qty-selector { display: flex; align-items: center; background: #FFD700; border-radius: 5px; overflow: hidden; }
+        .qty-btn { background: #FFD700; color: #000; border: none; padding: 6px 10px; font-weight: bold; font-size: 16px; cursor: pointer; }
+        .qty-num { background: #fff; color: #000; padding: 6px 12px; font-weight: bold; min-width: 20px; text-align: center; }
+
         .cart-wrapper { position: fixed; bottom: 0; left: 0; right: 0; z-index: 2000; }
         #review-list { background: #1a1a1a; padding: 10px; border-top: 1px solid #333; max-height: 150px; overflow-y: auto; display: none; }
         .cart-bar { background: #25d366; color: white; padding: 10px 20px; display: none; justify-content: space-between; align-items: center; border-radius: 20px 20px 0 0; }
@@ -93,7 +96,6 @@
     let totalBillAmount = 0;
     let userRating = 5;
     
-    // URL నుండి Owner ID మరియు Table ని తీసుకోవడం
     const urlParams = new URLSearchParams(window.location.search);
     const ownerId = urlParams.get('owner');
     const tableNo = urlParams.get('table') || "Counter";
@@ -110,11 +112,8 @@
     };
 
     function fetchData() {
-        // కేవలం ఈ Owner కి సంబంధించిన కేటగిరీలే లోడ్ అవుతాయి
         onSnapshot(query(collection(db, "categories"), where("ownerId", "==", ownerId)), (snapSectors) => {
             const sectors = snapSectors.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
-            
-            // కేవలం ఈ Owner కి సంబంధించిన మెనూ ఐటమ్స్ మాత్రమే లోడ్ అవుతాయి
             onSnapshot(query(collection(db, "menu_items"), where("ownerId", "==", ownerId)), (snapItems) => {
                 const menuData = snapItems.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderUI(sectors, menuData);
@@ -138,7 +137,14 @@
                     menuHtml += `<div class="menu-item">
                         <div class="food-info"><b>${item.name}</b><span>₹${item.price}</span></div>
                         <div id="btn-${item.id}">
-                            <button class="add-btn" onclick="window.addToCart('${item.id}','${item.name}',${item.price})">ADD</button>
+                            ${cart[item.name] ? 
+                                `<div class="qty-selector">
+                                    <button class="qty-btn" onclick="window.changeQty('${item.name}', -1, '${item.id}', ${item.price})">-</button>
+                                    <div class="qty-num">${cart[item.name].qty}</div>
+                                    <button class="qty-btn" onclick="window.changeQty('${item.name}', 1, '${item.id}', ${item.price})">+</button>
+                                </div>` : 
+                                `<button class="add-btn" onclick="window.changeQty('${item.name}', 1, '${item.id}', ${item.price})">ADD</button>`
+                            }
                         </div>
                     </div>`;
                 });
@@ -148,14 +154,27 @@
         document.getElementById('food-list').innerHTML = menuHtml || "<p style='text-align:center; padding:20px;'>No items available.</p>";
     }
 
-    window.addToCart = (id, name, price) => { 
-        if (!cart[name]) cart[name] = { id, price, qty: 1 }; else cart[name].qty++; 
-        window.updateCart(); 
-    };
+    window.changeQty = (name, delta, id, price) => { 
+        if (!cart[name]) {
+            cart[name] = { id, price, qty: 1 };
+        } else {
+            cart[name].qty += delta; 
+            if (cart[name].qty <= 0) delete cart[name];
+        }
 
-    window.changeQty = (name, delta) => { 
-        cart[name].qty += delta; 
-        if (cart[name].qty <= 0) delete cart[name];
+        // బటన్ UI ని అప్‌డేట్ చేయడం
+        const btnArea = document.getElementById(`btn-${id}`);
+        if (cart[name]) {
+            btnArea.innerHTML = `
+                <div class="qty-selector">
+                    <button class="qty-btn" onclick="window.changeQty('${name}', -1, '${id}', ${price})">-</button>
+                    <div class="qty-num">${cart[name].qty}</div>
+                    <button class="qty-btn" onclick="window.changeQty('${name}', 1, '${id}', ${price})">+</button>
+                </div>`;
+        } else {
+            btnArea.innerHTML = `<button class="add-btn" onclick="window.changeQty('${name}', 1, '${id}', ${price})">ADD</button>`;
+        }
+        
         window.updateCart(); 
     };
 
@@ -194,7 +213,6 @@
         }
         totalBillAmount += currentTotal;
         
-        // ఆర్డర్ ని ఓనర్ ఐడి తో సేవ్ చేయడం
         await addDoc(collection(db, "orders"), {
             ownerId: ownerId,
             customer: customerName, 
@@ -207,6 +225,14 @@
         alert("ఆర్డర్ పంపబడింది! ✅");
         cart = {}; 
         document.getElementById('main-modal').style.display = 'none';
+        
+        // మెనూ బటన్లని మళ్ళీ ADD గా మార్చడం
+        document.querySelectorAll('.qty-selector').forEach(el => {
+            const id = el.parentElement.id.replace('btn-', '');
+            const price = el.getAttribute('data-price'); // if stored, otherwise renderUI will fix on reload
+        });
+        
+        fetchData(); // UI Refresh
         updateDigitalReceipt();
         window.updateCart();
     };
