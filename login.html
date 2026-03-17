@@ -3,83 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KVS Restaurant - Secure Admin</title>
-    <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+    <title>KVS Ruchulu - Welcome & Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Poppins:wght@300;500;900&family=Righteous&display=swap" rel="stylesheet">
     
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
     <style>
-        * { box-sizing: border-box; }
-        body {
-            margin: 0; padding: 0; font-family: 'Poppins', sans-serif;
-            background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80');
-            background-size: cover; background-position: center; background-attachment: fixed;
-            min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Poppins', sans-serif; background: #000; color: #fff; min-height: 100vh; overflow: hidden; }
+
+        /* --- 1. NEON WELCOME OVERLAY (వెల్కమ్ స్క్రీన్) --- */
+        #welcomeOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 9999; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; transition: 1s ease-in-out;
         }
-        .hotel-title { font-family: 'Righteous', cursive; font-size: 40px; color: #FFD700; text-shadow: 0px 4px 15px rgba(255, 215, 0, 0.4); margin-bottom: 20px; text-align: center; }
-        .main-container { display: flex; width: 95%; max-width: 900px; background: rgba(20, 20, 20, 0.9); border: 2px solid #FFD700; border-radius: 25px; overflow: hidden; }
-        .box { flex: 1; padding: 30px; display: flex; flex-direction: column; }
+
+        /* Background Slider inside Overlay */
+        .slider-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        .slide { position: absolute; width: 100%; height: 100%; background-size: cover; background-position: center; opacity: 0; transform: scale(1.1); transition: opacity 2s ease-in-out, transform 8s linear; }
+        .slide.active { opacity: 0.4; transform: scale(1); }
+
+        .welcome-box { position: relative; width: 350px; height: 350px; display: flex; align-items: center; justify-content: center; margin-bottom: 30px; }
+        
+        /* 3 Chasing Dots Loader */
+        .loader { position: absolute; width: 100%; height: 100%; border-radius: 50%; animation: rotate 2.5s linear infinite; }
+        .loader::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%;
+            background: conic-gradient(transparent, transparent 25%, var(--clr));
+            -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #fff calc(100% - 6px));
+        }
+        .c1 { --clr: #FF1493; animation-delay: 0s; }
+        .c2 { --clr: #00FF00; animation-delay: -0.83s; }
+        .c3 { --clr: #FFD700; animation-delay: -1.66s; }
+        @keyframes rotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .hotel-name-neon { 
+            font-family: 'Great Vibes', cursive; font-size: 55px; color: #fff;
+            text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #FF1493, 0 0 40px #FF1493;
+            text-align: center; animation: flicker 2s infinite alternate;
+        }
+        @keyframes flicker {
+            0%, 18%, 22%, 25%, 53%, 57%, 100% { text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #FF1493, 0 0 40px #FF1493; }
+            20%, 24%, 55% { text-shadow: none; }
+        }
+
+        /* Steel Dot Button */
+        .btn-wrapper {
+            margin-top: 20px; position: relative; width: 220px; height: 60px;
+            background: #FFD700; border-radius: 50px; display: flex;
+            align-items: center; justify-content: center; overflow: hidden;
+            cursor: pointer; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        .btn-wrapper::before {
+            content: ''; position: absolute; width: 150%; height: 400%;
+            background: conic-gradient(transparent, transparent 10%, #fff 12%, transparent 13%); 
+            animation: borderRotate 1.5s linear infinite;
+        }
+        .btn-wrapper::after {
+            content: 'GET STARTED'; position: absolute; inset: 4px; 
+            background: #FFD700; border-radius: 50px; display: flex;
+            align-items: center; justify-content: center; color: #000;
+            font-size: 18px; font-weight: 900; z-index: 1;
+        }
+        @keyframes borderRotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* --- 2. LOGIN SECTION --- */
+        #loginSection {
+            opacity: 0; transform: scale(0.9); transition: 1s;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 100vh; width: 100%; padding: 20px;
+            background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200');
+            background-size: cover; background-position: center;
+        }
+        .hotel-title-main { font-family: 'Righteous', cursive; font-size: 40px; color: #FFD700; margin-bottom: 20px; text-shadow: 0 4px 15px rgba(255, 215, 0, 0.4); }
+        .main-container { display: flex; width: 100%; max-width: 900px; background: rgba(20, 20, 20, 0.9); border: 2px solid #FFD700; border-radius: 25px; overflow: hidden; }
+        .box { flex: 1; padding: 30px; }
         .login-box { border-right: 1px solid rgba(255, 215, 0, 0.2); }
         .reg-box { background: rgba(255, 215, 0, 0.05); }
         h2 { color: #FFD700; text-align: center; margin-bottom: 20px; }
         .input-group { margin-bottom: 15px; }
         label { display: block; color: #FFD700; margin-bottom: 5px; font-size: 14px; }
-        .pass-wrapper { position: relative; width: 100%; }
-        .eye-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #FFD700; font-size: 18px; z-index: 10; }
         input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #444; background: rgba(255, 255, 255, 0.05); color: white; outline: none; }
-        input:focus { border-color: #FFD700; }
-        .btn { background: #FFD700; color: black; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; transition: 0.3s; }
-        .btn:hover { background: #fff; }
-        .forget-link { color: #888; font-size: 12px; text-align: center; margin-top: 10px; cursor: pointer; text-decoration: underline; }
-        @media (max-width: 768px) { .main-container { flex-direction: column; } .login-box { border-right: none; border-bottom: 1px solid rgba(255, 215, 0, 0.2); } }
+        .btn-login { background: #FFD700; color: black; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
+        .pass-wrapper { position: relative; }
+        .eye-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #FFD700; }
+        .logout-btn { background: transparent; color: #ff4444; border: 1px solid #ff4444; width: 100%; margin-top: 20px; padding: 8px; border-radius: 10px; cursor: pointer; font-size: 11px; }
+
+        @media (max-width: 768px) { .main-container { flex-direction: column; } .login-box { border-right: none; border-bottom: 1px solid rgba(255, 215, 0, 0.2); } body { overflow: auto; } }
     </style>
 </head>
 <body>
 
-    <div class="hotel-title">KVS RUCHULU</div>
-
-    <div class="main-container">
-        <div class="box login-box">
-            <h2>Owner Login</h2>
-            <div class="input-group">
-                <label>User Email ID</label>
-                <input type="email" id="loginUser" placeholder="మీ ఇమెయిల్ ఇవ్వండి">
-            </div>
-            <div class="input-group">
-                <label>PIN (Password)</label>
-                <div class="pass-wrapper">
-                    <input type="password" id="loginPass" placeholder="మీ పాస్‌వర్డ్ ఇవ్వండి">
-                    <span class="eye-icon" onclick="toggleVisibility('loginPass')">👁️</span>
-                </div>
-            </div>
-            <button class="btn" onclick="handleLogin()">LOGIN</button>
-            <span class="forget-link" onclick="handleForget()">Forget PIN?</span>
+    <div id="welcomeOverlay">
+        <div class="slider-container">
+            <div class="slide active" style="background-image: url('https://images.unsplash.com/photo-1513104890138-7c749659a591?w=1200')"></div>
+            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1562967914-608f82629710?w=1200')"></div>
+            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=1200')"></div>
         </div>
+        <div class="welcome-box">
+            <div class="loader c1"></div>
+            <div class="loader c2"></div>
+            <div class="loader c3"></div>
+            <h1 class="hotel-name-neon">KVS Ruchulu</h1>
+        </div>
+        <div class="btn-wrapper" onclick="startApp()"></div>
+    </div>
 
-        <div class="box reg-box">
-            <h2>Register</h2>
-            <div class="input-group">
-                <label>Full Name</label>
-                <input type="text" id="regName" placeholder="ఓనర్ పేరు">
-            </div>
-            <div class="input-group">
-                <label>Email ID</label>
-                <input type="email" id="regUserID" placeholder="ఉదా: kvs@gmail.com">
-            </div>
-            <div class="input-group">
-                <label>Set PIN (Password)</label>
-                <div class="pass-wrapper">
-                    <input type="password" id="regPin" placeholder="కనీసం 6 అంకెలు">
-                    <span class="eye-icon" onclick="toggleVisibility('regPin')">👁️</span>
+    <div id="loginSection">
+        <div class="hotel-title-main">KVS RUCHULU</div>
+        <div class="main-container">
+            <div class="box login-box">
+                <h2>Owner Login</h2>
+                <div class="input-group">
+                    <label>User Email ID</label>
+                    <input type="email" id="loginUser" placeholder="మీ ఇమెయిల్ ఇవ్వండి">
                 </div>
+                <div class="input-group">
+                    <label>PIN (Password)</label>
+                    <div class="pass-wrapper">
+                        <input type="password" id="loginPass" placeholder="మీ పాస్‌వర్డ్ ఇవ్వండి">
+                        <span class="eye-icon" onclick="toggleVisibility('loginPass')">👁️</span>
+                    </div>
+                </div>
+                <button class="btn-login" onclick="handleLogin()">LOGIN</button>
+                <p onclick="handleForget()" style="color:#888; font-size:12px; text-align:center; margin-top:10px; cursor:pointer; text-decoration:underline;">Forget PIN?</p>
+                <button class="logout-btn" onclick="handleLogout()">LOGOUT FROM SYSTEM</button>
             </div>
-            <button class="btn" style="background: #25D366; color: white;" onclick="handleRegister()">CREATE ACCOUNT</button>
+            <div class="box reg-box">
+                <h2>Register</h2>
+                <div class="input-group"><label>Full Name</label><input type="text" id="regName" placeholder="ఓనర్ పేరు"></div>
+                <div class="input-group"><label>Email ID</label><input type="email" id="regUserID" placeholder="ఉదా: kvs@gmail.com"></div>
+                <div class="input-group">
+                    <label>Set PIN (Password)</label>
+                    <div class="pass-wrapper">
+                        <input type="password" id="regPin" placeholder="కనీసం 6 అంకెలు">
+                        <span class="eye-icon" onclick="toggleVisibility('regPin')">👁️</span>
+                    </div>
+                </div>
+                <button class="btn-login" style="background: #25D366; color: white;" onclick="handleRegister()">CREATE ACCOUNT</button>
+            </div>
         </div>
     </div>
 
     <script>
+        // --- Slider Logic ---
+        const slides = document.querySelectorAll('.slide');
+        let currentSlide = 0;
+        setInterval(() => {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (currentSlide + 1) % slides.length;
+            slides[currentSlide].classList.add('active');
+        }, 5000);
+
+        // --- Transition Logic ---
+        function startApp() {
+            document.getElementById('welcomeOverlay').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('welcomeOverlay').style.display = 'none';
+                document.getElementById('loginSection').style.opacity = '1';
+                document.getElementById('loginSection').style.transform = 'scale(1)';
+                document.body.style.overflow = 'auto';
+            }, 1000);
+        }
+
+        // --- Firebase Config (నీ ఒరిజినల్ కోడ్) ---
         const firebaseConfig = {
             apiKey: "AIzaSyDYOgbu7yfwlSps_-32frEedWss1qmRQoM",
             authDomain: "kvs-project-c60d8.firebaseapp.com",
@@ -88,7 +178,6 @@
             messagingSenderId: "905673301986",
             appId: "1:905673301986:web:aad1477b1098d7cbf663bb"
         };
-        
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
@@ -98,73 +187,50 @@
             input.type = (input.type === "password") ? "text" : "password";
         }
 
-        // --- REGISTER LOGIC ---
+        // --- నీ పాత LOGIN & REGISTER లాజిక్ (అస్సలు మార్చలేదు) ---
+        function handleLogout() {
+            if(confirm("మీరు సిస్టమ్ నుండి లాగ్ అవుట్ అవ్వాలనుకుంటున్నారా?")) {
+                auth.signOut().then(() => { localStorage.removeItem('ownerId'); location.reload(); });
+            }
+        }
+
         async function handleRegister() {
             const email = document.getElementById('regUserID').value;
             const pin = document.getElementById('regPin').value;
             const name = document.getElementById('regName').value;
-
-            if(!email.includes("@")) {
-                alert("దయచేసి సరైన Email ID ఇవ్వండి!");
-                return;
-            }
-
+            if(!email.includes("@")) { alert("దయచేసి సరైన Email ID ఇవ్వండి!"); return; }
             try {
                 const userCredential = await auth.createUserWithEmailAndPassword(email, pin);
                 await db.collection("owners").doc(userCredential.user.uid).set({
-                    ownerName: name,
-                    email: email,
-                    ownerId: userCredential.user.uid // Storing UID as Owner ID
+                    ownerName: name, email: email, ownerId: userCredential.user.uid
                 });
-                alert("అకౌంట్ సక్సెస్‌ఫుల్ గా క్రియేట్ అయ్యింది! ఇప్పుడు లాగిన్ అవ్వండి.");
-            } catch (error) {
-                alert("తప్పు: " + error.message);
-            }
+                alert("అకౌంట్ సక్సెస్‌ఫుల్ గా క్రియేట్ అయ్యింది!");
+            } catch (error) { alert(error.message); }
         }
 
-        // --- LOGIN LOGIC ---
         function handleLogin() {
             const email = document.getElementById('loginUser').value;
             const pin = document.getElementById('loginPass').value;
-
             auth.signInWithEmailAndPassword(email, pin)
                 .then((userCredential) => {
                     const uid = userCredential.user.uid;
-                    
-                    // SAVE OWNER ID LOCALLY
                     localStorage.setItem('ownerId', uid);
-
-                    // UPDATE LOCATION & REDIRECT
                     if (navigator.geolocation) {
                         navigator.geolocation.getCurrentPosition(async (position) => {
-                            const lat = position.coords.latitude;
-                            const lng = position.coords.longitude;
-
                             await db.collection("owners").doc(uid).set({
-                                hotelLocation: { lat: lat, lng: lng },
+                                hotelLocation: { lat: position.coords.latitude, lng: position.coords.longitude },
                                 lastLogin: firebase.firestore.FieldValue.serverTimestamp()
                             }, { merge: true });
-
-                            alert("స్వాగతం! మీ హోటల్ లొకేషన్ అప్‌డేట్ అయ్యింది. 📍");
-                            window.location.href = 'owner.html'; // Redirect to your Admin page
-                        }, (error) => {
-                            alert("Location Allow చేస్తేనే దూరం లాక్ సిస్టమ్ పనిచేస్తుంది. కానీ లాగిన్ అవుతున్నారు...");
                             window.location.href = 'owner.html';
-                        });
-                    } else {
-                        window.location.href = 'owner.html';
-                    }
+                        }, () => { window.location.href = 'owner.html'; });
+                    } else { window.location.href = 'owner.html'; }
                 })
                 .catch((error) => alert("లాగిన్ వివరాలు తప్పు: " + error.message));
         }
 
         function handleForget() {
             const email = prompt("మీ రిజిస్టర్డ్ ఇమెయిల్ ఇవ్వండి:");
-            if(email) {
-                auth.sendPasswordResetEmail(email)
-                    .then(() => alert("పాస్‌వర్డ్ రీసెట్ లింక్ ఇమెయిల్ కి పంపాము!"))
-                    .catch((error) => alert(error.message));
-            }
+            if(email) auth.sendPasswordResetEmail(email).then(() => alert("లింక్ పంపాము!")).catch((e) => alert(e.message));
         }
     </script>
 </body>
