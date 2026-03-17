@@ -14,7 +14,6 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Poppins', sans-serif; background: #000; color: #fff; min-height: 100vh; overflow: hidden; }
 
-        /* --- 1. NEON WELCOME OVERLAY --- */
         #welcomeOverlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; z-index: 9999; display: flex; flex-direction: column;
@@ -26,7 +25,6 @@
         .slide.active { opacity: 0.4; transform: scale(1); }
 
         .welcome-box { position: relative; width: 350px; height: 350px; display: flex; align-items: center; justify-content: center; margin-bottom: 30px; }
-        
         .loader { position: absolute; width: 100%; height: 100%; border-radius: 50%; animation: rotate 2.5s linear infinite; }
         .loader::before {
             content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%;
@@ -48,27 +46,29 @@
             20%, 24%, 55% { text-shadow: none; }
         }
 
-        /* --- STEEL TAIL BUTTON (నీకు కావాల్సిన మెరిసే తోక బటన్) --- */
+        /* --- మెరుగుపరచిన STEEL TAIL బటన్ --- */
         .btn-wrapper {
-            margin-top: 50px; position: relative; width: 250px; height: 65px;
+            margin-top: 50px; position: relative; width: 260px; height: 70px;
             background: #FFD700; border-radius: 50px; display: flex;
             align-items: center; justify-content: center; overflow: hidden;
-            cursor: pointer; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); z-index: 100;
+            cursor: pointer; box-shadow: 0 0 20px rgba(255, 215, 0, 0.6); z-index: 100;
         }
+        /* ఆ మెరిసే తోక (Tail) ఇక్కడ ఉంది */
         .btn-wrapper::before {
-            content: ''; position: absolute; width: 150%; height: 400%;
-            background: conic-gradient(transparent, transparent 10%, #fff 12%, transparent 13%); 
-            animation: borderRotate 1.5s linear infinite;
+            content: ''; position: absolute; width: 200%; height: 500%;
+            /* ఇక్కడ తోక వెడల్పు పెంచాను (25% వరకు) మరియు బ్రైట్‌నెస్ పెంచాను */
+            background: conic-gradient(transparent, transparent 15%, #fff 20%, #fff 25%, transparent 30%); 
+            animation: borderRotate 1.2s linear infinite;
         }
         .btn-wrapper::after {
-            content: 'GET STARTED'; position: absolute; inset: 4px; 
+            content: 'GET STARTED'; position: absolute; inset: 5px; 
             background: #FFD700; border-radius: 50px; display: flex;
             align-items: center; justify-content: center; color: #000;
-            font-size: 20px; font-weight: 900; letter-spacing: 1px; z-index: 1;
+            font-size: 22px; font-weight: 900; letter-spacing: 1px; z-index: 1;
         }
         @keyframes borderRotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* --- 2. LOGIN SECTION --- */
+        /* --- LOGIN SECTION --- */
         #loginSection {
             opacity: 0; transform: scale(0.9); transition: 1s;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -165,7 +165,6 @@
             }, 1000);
         }
 
-        // --- Firebase Config (నీ ఒరిజినల్ డేటా) ---
         const firebaseConfig = {
             apiKey: "AIzaSyDYOgbu7yfwlSps_-32frEedWss1qmRQoM",
             authDomain: "kvs-project-c60d8.firebaseapp.com",
