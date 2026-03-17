@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="te">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KVS Ruchulu - Neon Luxury</title>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Poppins:wght@400;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; overflow: hidden; background: #000; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+        /* Background Slider */
+        .slider-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; overflow: hidden; }
+        .slide { position: absolute; width: 100%; height: 100%; background-size: cover; background-position: center; opacity: 0; transform: scale(1.1); transition: opacity 2s ease-in-out, transform 8s linear; }
+        .active { opacity: 0.4; transform: scale(1); }
+
+        /* Center Animation Box */
+        .welcome-box { position: relative; width: 380px; height: 380px; display: flex; align-items: center; justify-content: center; }
+        
+        /* 3 Chasing Dots */
+        .loader { position: absolute; width: 100%; height: 100%; border-radius: 50%; animation: rotate 2.5s linear infinite; transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        .loader::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%;
+            background: conic-gradient(transparent, transparent 25%, var(--clr));
+            -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #fff calc(100% - 6px));
+        }
+        .loader::after {
+            content: ''; position: absolute; top: -2px; left: 50%; transform: translateX(-50%);
+            width: 14px; height: 14px; background: var(--clr); border-radius: 50%;
+            box-shadow: 0 0 15px var(--clr), 0 0 30px var(--clr);
+        }
+        .c1 { --clr: #FF1493; animation-delay: 0s; } /* Neon Pink */
+        .c2 { --clr: #00FF00; animation-delay: -0.83s; } /* Neon Green */
+        .c3 { --clr: #FFD700; animation-delay: -1.66s; } /* Gold */
+        @keyframes rotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* --- Neon Cursive Hotel Name --- */
+        .content { text-align: center; z-index: 50; transition: 0.6s; }
+        .hotel-name { 
+            font-family: 'Great Vibes', cursive; 
+            font-size: 60px; 
+            font-weight: 400;
+            color: #fff;
+            /* నీ ఫోటోలో ఉన్న నియాన్ గ్లో ఎఫెక్ట్ */
+            text-shadow: 
+                0 0 5px #fff,
+                0 0 10px #fff,
+                0 0 20px #FF1493,
+                0 0 40px #FF1493,
+                0 0 80px #FF1493;
+            animation: flicker 2s infinite alternate;
+        }
+
+        /* నియాన్ లైట్ అప్పుడప్పుడు మెరిసినట్టు ఎఫెక్ట్ */
+        @keyframes flicker {
+            0%, 18%, 22%, 25%, 53%, 57%, 100% {
+                text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #FF1493, 0 0 40px #FF1493;
+            }
+            20%, 24%, 55% { text-shadow: none; }
+        }
+
+        /* Exit Animation */
+        .exit-anim .c1 { transform: translateY(-120vh); opacity: 0; }
+        .exit-anim .c2 { transform: translateX(120vw); opacity: 0; }
+        .exit-anim .c3 { transform: translateX(-120vw); opacity: 0; }
+        .exit-anim .content { opacity: 0; transform: scale(0.5) blur(10px); }
+
+        /* Steel Dot with Tail Button */
+        .btn-wrapper {
+            margin-top: 50px;
+            position: relative;
+            width: 250px;
+            height: 65px;
+            background: #FFD700; 
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+        }
+        .btn-wrapper::before {
+            content: '';
+            position: absolute;
+            width: 150%;
+            height: 400%;
+            background: conic-gradient(transparent, transparent 10%, #fff 12%, transparent 13%); 
+            animation: borderRotate 1.5s linear infinite;
+        }
+        .btn-wrapper::after {
+            content: 'GET STARTED';
+            position: absolute;
+            inset: 4px; 
+            background: #FFD700;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            z-index: 1;
+        }
+        @keyframes borderRotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="slider-container">
+        <div class="slide active" style="background-image: url('https://images.unsplash.com/photo-1513104890138-7c749659a591?w=1200')"></div>
+        <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1562967914-608f82629710?w=1200')"></div>
+        <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1501443762994-82bd5dabb892?w=1200')"></div>
+        <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=1200')"></div>
+    </div>
+
+    <div class="welcome-box" id="animBox">
+        <div class="loader c1"></div>
+        <div class="loader c2"></div>
+        <div class="loader c3"></div>
+        <div class="content">
+            <h1 class="hotel-name">KVS Ruchulu</h1>
+        </div>
+    </div>
+
+    <div class="btn-wrapper" id="mainBtn" onclick="startApp()"></div>
+
+    <script>
+        const slides = document.querySelectorAll('.slide');
+        let currentSlide = 0;
+        function nextSlide() {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (currentSlide + 1) % slides.length;
+            slides[currentSlide].classList.add('active');
+        }
+        setInterval(nextSlide, 5000);
+
+        function startApp() {
+            document.getElementById('animBox').classList.add('exit-anim');
+            document.getElementById('mainBtn').style.opacity = '0';
+            document.getElementById('mainBtn').style.pointerEvents = 'none';
+
+            setTimeout(() => {
+                window.location.href = "login.html";
+            }, 1000); 
+        }
+    </script>
+</body>
+</html>
