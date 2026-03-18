@@ -179,22 +179,41 @@
             loadMenu();
         });
        
-      onSnapshot(query(collection(db, "orders"), where("ownerId", "==", currentOwnerId), orderBy("timestamp", "desc")), (snap) => {
-            const oL = document.getElementById('orderList'); 
-            oL.innerHTML = "";
-            snap.forEach(d => {
-                const o = d.data();
-                const orderTime = getDisplayTime(o.timestamp);
-                oL.innerHTML += `<div class="live-order-card">
-                    <button class="del-btn" onclick="window.deleteOrder('${d.id}')">Done</button>
-                    <div style="font-size: 10px; color: #FFD700; margin-bottom: 5px;"><i class="far fa-clock"></i> ${orderTime}</div>
-                    <b>T-${o.table} | ${o.customer}</b><br><small style="color: #ccc;">${o.items}</small>
-                    <div style="margin-top:8px; border-top:1px dashed #555; padding-top:5px; display: flex; justify-content: space-between;">
-                        <span>Bill:</span><b style="color:#25D366;">₹${o.total}</b>
-                    </div>
-                </div>`;
-            });
-        });
+  onSnapshot(query(collection(db, "orders"), where("ownerId", "==", currentOwnerId)), (snap) => {
+    const oL = document.getElementById('orderList'); 
+    oL.innerHTML = "";
+
+    // 1. వాయిస్ అలర్ట్ (కొత్త ఆర్డర్ వస్తే మాట్లాడుతుంది)
+    snap.docChanges().forEach((change) => {
+        if (change.type === "added") {
+            const msg = new SpeechSynthesisUtterance("కొత్త ఆర్డర్ వచ్చింది చూడన్నా");
+            msg.lang = 'te-IN'; 
+            window.speechSynthesis.speak(msg);
+        }
+    });
+
+    // 2. ఆర్డర్లను ఒక లిస్ట్ (Array) లోకి తీసుకోవడం
+    const docs = [];
+    snap.forEach(d => {
+        docs.push({ id: d.id, ...d.data() });
+    });
+
+    // 3. ఆర్డర్లను రివర్స్ చేయడం (కొత్తవి పైన రావడానికి)
+    docs.reverse();
+
+    // 4. స్క్రీన్ మీద చూపించడం
+    docs.forEach(o => {
+        const orderTime = getDisplayTime(o.timestamp);
+        oL.innerHTML += `<div class="live-order-card">
+            <button class="del-btn" onclick="window.deleteOrder('${o.id}')">Done</button>
+            <div style="font-size: 10px; color: #FFD700; margin-bottom: 5px;"><i class="far fa-clock"></i> ${orderTime}</div>
+            <b>T-${o.table} | ${o.customer}</b><br><small style="color: #ccc;">${o.items}</small>
+            <div style="margin-top:8px; border-top:1px dashed #555; padding-top:5px; display: flex; justify-content: space-between;">
+                <span>Bill:</span><b style="color:#25D366;">₹${o.total}</b>
+            </div>
+        </div>`;
+    });
+});  
 
         onSnapshot(query(collection(db, "owner_bills"), where("ownerId", "==", currentOwnerId)), (snap) => {
             const c = document.getElementById('customerBillList'); c.innerHTML = "";
