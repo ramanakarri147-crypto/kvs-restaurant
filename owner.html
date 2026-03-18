@@ -178,8 +178,8 @@
             });
             loadMenu();
         });
-
-        onSnapshot(query(collection(db, "orders"), where("ownerId", "==", currentOwnerId)), (snap) => {
+       
+      onSnapshot(query(collection(db, "orders"), where("ownerId", "==", currentOwnerId), orderBy("timestamp", "desc")), (snap) => {
             const oL = document.getElementById('orderList'); 
             oL.innerHTML = "";
             snap.forEach(d => {
