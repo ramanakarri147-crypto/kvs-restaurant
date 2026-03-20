@@ -65,6 +65,7 @@
             <div class="menu-option" onclick="window.showTablesGrid()">🪑 Table History (1-50)</div>
             <div class="menu-option" onclick="window.showQRSection()" style="background:#FFD700; color:black;">🖨️ Generate Table QR</div>
             <div class="menu-option" onclick="window.showHistory('all')" style="background:#25D366; color:white;">💰 View Total Sales</div>
+            <div class="menu-option" onclick="window.deleteAllHistory()" style="background:#ff4444; color:white; margin-top:20px;">🗑️ Delete All History</div>
             <div class="menu-option" onclick="window.logout()" style="background:#444; color:white;">🚪 Logout</div>
         </div>
         <div id="sectorManager" style="display:none;">
@@ -179,41 +180,60 @@
             loadMenu();
         });
        
-  onSnapshot(query(collection(db, "orders"), where("ownerId", "==", currentOwnerId)), (snap) => {
-    const oL = document.getElementById('orderList'); 
-    oL.innerHTML = "";
+onSnapshot(query(collection(db, "orders"), where("ownerId", "==", currentOwnerId)), (snap) => {
+        const oL = document.getElementById('orderList'); 
+        oL.innerHTML = "";
 
-    // 1. వాయిస్ అలర్ట్ (కొత్త ఆర్డర్ వస్తే మాట్లాడుతుంది)
-    snap.docChanges().forEach((change) => {
-        if (change.type === "added") {
-            const msg = new SpeechSynthesisUtterance("కొత్త ఆర్డర్ వచ్చింది చూడన్నా");
-            msg.lang = 'te-IN'; 
-            window.speechSynthesis.speak(msg);
-        }
+        // 1. కొత్త ఆర్డర్ వచ్చినప్పుడు ఒక్కసారి మాత్రమే వాయిస్ అలర్ట్
+        snap.docChanges().forEach((change) => {
+            // metadata చెక్ చేయడం వల్ల పాత వాటికి రాదు, కొత్తగా వచ్చినప్పుడు ఒక్కసారే వస్తుంది
+            if (change.type === "added" && !snap.metadata.hasPendingWrites) {
+                const msg = new SpeechSynthesisUtterance("కొత్త ఆర్డర్ వచ్చింది చూడన్నా");
+                msg.lang = 'te-IN'; 
+                msg.rate = 1.0; 
+                window.speechSynthesis.speak(msg);
+            }
+        });
+
+        // 2. ఆర్డర్లను ఒక లిస్ట్ లోకి తీసుకోవడం
+        const docs = [];
+        snap.forEach(d => {
+            docs.push({ id: d.id, ...d.data() });
+        });
+
+        // 3. కొత్త ఆర్డర్ పైన రావడానికి సార్టింగ్ (Newest First)
+        docs.sort((a, b) => {
+            const timeA = a.timestamp ? (a.timestamp.seconds || Date.now()) : Date.now();
+            const timeB = b.timestamp ? (b.timestamp.seconds || Date.now()) : Date.now();
+            return timeB - timeA; 
+        });
+        
+        // 4. స్క్రీన్ మీద నీట్ గా చూపించడం
+        docs.forEach(o => {
+            const orderTime = getDisplayTime(o.timestamp);
+            oL.innerHTML += `
+            <div class="live-order-card" style="border-left: 5px solid #25D366; background: #282828; padding: 15px; margin-bottom: 15px; border-radius: 10px;">
+                <button class="del-btn" onclick="window.deleteOrder('${o.id}')" style="background: #ff4444; color: white; border: none; padding: 8px 15px; border-radius: 5px; float: right; font-weight: bold; cursor: pointer;">Done</button>
+                
+                <div style="font-size: 13px; color: #FFD700; margin-bottom: 8px;">
+                    <i class="far fa-clock"></i> <b>Time & Date:</b> ${orderTime}
+                </div>
+                
+                <div style="margin-bottom: 5px; font-size: 16px; color: #fff;">
+                    <b>Customer:</b> ${o.customer} <span style="color: #FFD700;">(Table: ${o.table})</span>
+                </div>
+                
+                <div style="margin-bottom: 10px; font-size: 14px; color: #ccc; line-height: 1.4;">
+                    <b>Items:</b> ${o.items.replace(/\n/g, ', ')}
+                </div>
+                
+                <div style="border-top: 1px dashed #555; padding-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: bold; color: #aaa;">Total Bill:</span>
+                    <b style="color: #25D366; font-size: 20px;">₹${o.total}</b>
+                </div>
+            </div>`;
+        });
     });
-
-    // 2. ఆర్డర్లను ఒక లిస్ట్ (Array) లోకి తీసుకోవడం
-    const docs = [];
-    snap.forEach(d => {
-        docs.push({ id: d.id, ...d.data() });
-    });
-
-    // 3. ఆర్డర్లను రివర్స్ చేయడం (కొత్తవి పైన రావడానికి)
-    docs.reverse();
-
-    // 4. స్క్రీన్ మీద చూపించడం
-    docs.forEach(o => {
-        const orderTime = getDisplayTime(o.timestamp);
-        oL.innerHTML += `<div class="live-order-card">
-            <button class="del-btn" onclick="window.deleteOrder('${o.id}')">Done</button>
-            <div style="font-size: 10px; color: #FFD700; margin-bottom: 5px;"><i class="far fa-clock"></i> ${orderTime}</div>
-            <b>T-${o.table} | ${o.customer}</b><br><small style="color: #ccc;">${o.items}</small>
-            <div style="margin-top:8px; border-top:1px dashed #555; padding-top:5px; display: flex; justify-content: space-between;">
-                <span>Bill:</span><b style="color:#25D366;">₹${o.total}</b>
-            </div>
-        </div>`;
-    });
-});  
 
         onSnapshot(query(collection(db, "owner_bills"), where("ownerId", "==", currentOwnerId)), (snap) => {
             const c = document.getElementById('customerBillList'); c.innerHTML = "";
@@ -311,7 +331,7 @@
     window.deleteCat = async (id) => confirm("Delete Category?") && await deleteDoc(doc(db, "categories", id));
     window.toggleH = async (id, s) => await updateDoc(doc(db, "menu_items", id), { status: s === "hidden" ? "visible" : "hidden" });
 
-    window.showHistory = async (type) => {
+   window.showHistory = async (type) => {
         document.getElementById('mainOptions').style.display = 'none'; 
         document.getElementById('tablesGrid').style.display = 'none'; 
         document.getElementById('historyResult').style.display = 'block';
@@ -320,39 +340,36 @@
 
         const s = await getDocs(query(collection(db, "owner_bills"), where("ownerId", "==", currentOwnerId)));
         let tot = 0, billHTML = "";
-        
+        let count = 1;
+
         s.forEach(d => {
             const b = d.data();
             if(type === 'all' || b.table == type) {
-                const stars = "★".repeat(b.rating || 0) + "☆".repeat(5 - (b.rating || 0));
                 let fullTime = getDisplayTime(b.timestamp);
-                let bDate = fullTime.split(',')[0];
-                let bTime = fullTime.split(',')[1] || "";
                 
                 billHTML += `
-                <div class="dmart-bill" style="margin-bottom:20px; border:1px solid #ddd; border-radius:8px;">
-                    <div class="bill-stars">${stars}</div>
-                    <div style="text-align:center; border-bottom:1px dashed #000; padding-bottom:5px; margin-bottom:5px;">
-                        <b style="font-size:16px;">KVS RUCHULU</b><br><small>History Bill</small>
-                    </div>
-                    <div class="bill-info-row">
-                        <span><b>Table: ${b.table}</b></span>
-                        <span>Date: ${bDate}</span>
-                        <span>Time: ${bTime}</span>
-                    </div>
-                    <div class="bill-items-area">
-                        <b>Customer: ${b.customer}</b><br>
-                        ${b.items.replace(/\n/g, '<br>')}
-                    </div>
-                    <div style="border-top:1px dashed #000; font-weight:bold; display:flex; justify-content:space-between; padding-top:5px; margin-top:5px; font-size:14px;">
-                        <span>TOTAL</span><span>₹${b.total}</span>
-                    </div>
+                <div style="background: #222; padding: 15px; border-bottom: 2px solid #FFD700; margin-bottom: 10px; font-family: 'Poppins', sans-serif; color: white;">
+                    <div style="color: #FFD700; font-weight: bold; margin-bottom: 5px;"># Order ${count}</div>
+                    <div style="margin-bottom: 4px;"><b>1. Time & Date :</b> ${fullTime}</div>
+                    <div style="margin-bottom: 4px;"><b>2. Name :</b> ${b.customer}</div>
+                    <div style="margin-bottom: 4px;"><b>3. Orders :</b> <span style="color: #ccc;">${b.items.replace(/\n/g, ', ')}</span></div>
+                    <div style="margin-top: 8px; font-size: 18px; color: #25D366;"><b>4. Total Bill : ₹${b.total}</b></div>
                 </div>`;
+                
                 tot += Number(b.total);
+                count++;
             }
         });
+
         resCont.innerHTML = billHTML || "<p style='text-align:center;'>No History!</p>";
-        if(billHTML) resCont.innerHTML += `<div style="background:#25D366; color:white; padding:15px; border-radius:10px; text-align:center;"><h2>Total: ₹${tot}</h2></div>`;
+        if(billHTML) {
+            resCont.innerHTML = `<div style="background:#FFD700; color:#000; padding:10px; text-align:center; font-weight:bold; margin-bottom:15px; border-radius:5px;">
+                                    ${type === 'all' ? 'TOTAL SALES' : 'TABLE - ' + type + ' HISTORY'}
+                                 </div>` + resCont.innerHTML;
+            resCont.innerHTML += `<div style="background:#25D366; color:white; padding:15px; border-radius:10px; text-align:center; margin-top:10px;">
+                                    <h2 style="margin:0;">Total Amount: ₹${tot}</h2>
+                                 </div>`;
+        }
     };
 
     window.openSettings = () => document.getElementById('settingsModal').style.display = 'block';
@@ -371,6 +388,33 @@
     };
     window.printB = (id) => { document.getElementById(id).classList.add('print-section'); window.print(); document.getElementById(id).classList.remove('print-section'); };
     window.printQR = () => { document.getElementById('qrcard').classList.add('print-section'); window.print(); document.getElementById('qrcard').classList.remove('print-section'); };
+    // హిస్టరీ మొత్తం డిలీట్ చేసే కోడ్
+    window.deleteAllHistory = async () => {
+        const confirmText = prompt("మొత్తం హిస్టరీని శాశ్వతంగా డిలీట్ చేయాలా? అయితే ఇక్కడ 'YES' అని టైప్ చేయండి:");
+        
+        if (confirmText === "YES") {
+            try {
+                // Firebase నుండి డేటా తెచ్చుకుంటుంది
+                const q = query(collection(db, "owner_bills"), where("ownerId", "==", currentOwnerId));
+                const snapshot = await getDocs(q);
+                
+                if (snapshot.empty) {
+                    return alert("డిలీట్ చేయడానికి హిస్టరీ ఏమీ లేదు!");
+                }
+
+                // ఒక్కొక్కటిగా డిలీట్ చేస్తుంది
+                const deletePromises = snapshot.docs.map(d => deleteDoc(d.ref));
+                await Promise.all(deletePromises);
+                
+                alert("హిస్టరీ మొత్తం క్లీన్ చేయబడింది!");
+                location.reload(); 
+            } catch (error) {
+                alert("డిలీట్ చేయడంలో సమస్య వచ్చింది!");
+            }
+        } else {
+            alert("డిలీట్ క్యాన్సిల్ చేయబడింది.");
+        }
+    };
 </script>
 </body>
 </html>
