@@ -196,19 +196,37 @@
             }
         }
 
-        async function handleRegister() {
-            const email = document.getElementById('regUserID').value;
-            const pin = document.getElementById('regPin').value;
-            const name = document.getElementById('regName').value;
-            if(!email.includes("@")) { alert("దయచేసి సరైన Email ID ఇవ్వండి!"); return; }
-            try {
-                const userCredential = await auth.createUserWithEmailAndPassword(email, pin);
-                await db.collection("owners").doc(userCredential.user.uid).set({
-                    ownerName: name, email: email, ownerId: userCredential.user.uid
-                });
-                alert("అకౌంట్ సక్సెస్‌ఫుల్ గా క్రియేట్ అయ్యింది!");
-            } catch (error) { alert(error.message); }
-        }
+       async function handleRegister() {
+    const email = document.getElementById('regUserID').value;
+    const pin = document.getElementById('regPin').value;
+    const name = document.getElementById('regName').value;
+
+    if(!email.includes("@")) { 
+        alert("దయచేసి సరైన Email ID ఇవ్వండి!"); 
+        return; 
+    }
+
+    try {
+        // Firebase లో యూజర్‌ని క్రియేట్ చేయడం
+        const userCredential = await auth.createUserWithEmailAndPassword(email, pin);
+        
+        // Firestore డేటాబేస్‌లో ఓనర్ వివరాలు సేవ్ చేయడం
+        await db.collection("owners").doc(userCredential.user.uid).set({
+            ownerName: name, 
+            email: email, 
+            ownerId: userCredential.user.uid
+        });
+
+        alert("అకౌంట్ సక్సెస్‌ఫుల్ గా క్రియేట్ అయ్యింది!");
+        
+        // ముఖ్యమైన మార్పు: అకౌంట్ క్రియేట్ అయ్యాక నేరుగా ఓనర్ పేజీకి వెళ్లడానికి ఇది ఉపయోగపడుతుంది
+        localStorage.setItem('ownerId', userCredential.user.uid);
+        window.location.href = 'owner.html'; 
+
+    } catch (error) { 
+        alert("రిజిస్ట్రేషన్ సమస్య: " + error.message); 
+    }
+}
 
         function handleLogin() {
             const email = document.getElementById('loginUser').value;
