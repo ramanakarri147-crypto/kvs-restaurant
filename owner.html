@@ -235,7 +235,7 @@ onSnapshot(query(collection(db, "orders"), where("ownerId", "==", currentOwnerId
         });
     });
 
-        onSnapshot(query(collection(db, "owner_bills"), where("ownerId", "==", currentOwnerId)), (snap) => {
+        onSnapshot(query(collection(db, "orders"), where("ownerId", "==", currentOwnerId)), (snap) => {
             const c = document.getElementById('customerBillList'); c.innerHTML = "";
             snap.forEach(d => {
                 const b = d.data();
