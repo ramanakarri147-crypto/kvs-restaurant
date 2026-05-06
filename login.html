@@ -20,14 +20,12 @@
             align-items: center; justify-content: center; transition: 1s ease-in-out;
         }
 
-        /* --- HD SLIDER --- */
         .slider-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
         .slide { position: absolute; width: 100%; height: 100%; background-size: cover; background-position: center; opacity: 0; transform: scale(1.1); transition: opacity 1.5s ease-in-out, transform 6s linear; }
         .slide.active { opacity: 0.6; transform: scale(1); }
 
         .welcome-box { position: relative; width: 350px; height: 350px; display: flex; align-items: center; justify-content: center; margin-bottom: 30px; }
         
-        /* Chasing Dots Animation */
         .loader { position: absolute; width: 100%; height: 100%; border-radius: 50%; animation: rotate 2.5s linear infinite; }
         .loader::before {
             content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%;
@@ -49,7 +47,6 @@
             20%, 24%, 55% { opacity: 0.8; }
         }
 
-        /* --- HIGH VISIBILITY STEEL TAIL BUTTON --- */
         .btn-wrapper {
             margin-top: 50px; position: relative; width: 260px; height: 75px;
             background: #FFD700; border-radius: 50px; display: flex;
@@ -57,14 +54,12 @@
             cursor: pointer; box-shadow: 0 0 30px rgba(255, 215, 0, 0.8); z-index: 100;
         }
         
-        /* ఇక్కడ తోక చుక్కని మరింత షార్ప్‌గా, బ్రైట్‌గా చేశాను */
         .btn-wrapper::before {
             content: ''; position: absolute; width: 200%; height: 200%;
             background: conic-gradient(transparent, transparent 10%, #fff 15%, #fff 20%, transparent 25%); 
             animation: borderRotate 1s linear infinite;
         }
         
-        /* చుక్క యానిమేషన్ స్పష్టంగా తెలియడానికి ఈ ఎఫెక్ట్ */
         .btn-wrapper::after {
             content: 'GET STARTED'; position: absolute; inset: 6px; 
             background: #FFD700; border-radius: 50px; display: flex;
@@ -74,7 +69,6 @@
         }
         @keyframes borderRotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* --- LOGIN SECTION --- */
         #loginSection {
             opacity: 0; transform: scale(0.95); transition: 1s;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -82,7 +76,7 @@
             background: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), url('https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=2070&auto=format&fit=crop');
             background-size: cover; background-position: center;
         }
-        .hotel-title-main { font-family: 'Righteous', cursive; font-size: 45px; color: #FFD700; margin-bottom: 25px; text-shadow: 0 4px 20px rgba(255, 215, 0, 0.5); }
+        .hotel-title-main { font-family: 'Righteous', cursive; font-size: 45px; color: #FFD700; margin-bottom: 5px; text-shadow: 0 4px 20px rgba(255, 215, 0, 0.5); cursor: pointer; }
         .main-container { display: flex; width: 100%; max-width: 900px; background: rgba(15, 15, 15, 0.95); border: 2px solid #FFD700; border-radius: 30px; overflow: hidden; box-shadow: 0 0 50px rgba(0,0,0,1); }
         .box { flex: 1; padding: 35px; }
         .login-box { border-right: 1px solid rgba(255, 215, 0, 0.3); }
@@ -103,6 +97,13 @@
 </head>
 <body>
 
+    <div id="namePromptOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:99999; flex-direction:column; align-items:center; justify-content:center;">
+        <h2 style="color:#FFD700; font-family:'Great Vibes', cursive; font-size:40px; margin-bottom:20px;">Welcome to KVS!</h2>
+        <p style="color:#fff; margin-bottom:20px;">మీ రెస్టారెంట్ పేరు నమోదు చేయండి</p>
+        <input type="text" id="userInputName" placeholder="రెస్టారెంట్ పేరు..." style="width:280px; padding:15px; border-radius:25px; border:2px solid #FFD700; background:transparent; color:#fff; text-align:center; font-size:18px; outline:none;">
+        <button onclick="saveName()" style="margin-top:20px; padding:12px 40px; border-radius:25px; border:none; background:#FFD700; color:#000; font-weight:900; cursor:pointer; font-size:16px;">SUBMIT</button>
+    </div>
+
     <div id="welcomeOverlay">
         <div class="slider-container">
             <div class="slide active" style="background-image: url('https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=2070&auto=format&fit=crop')"></div>
@@ -113,13 +114,15 @@
             <div class="loader c1"></div>
             <div class="loader c2"></div>
             <div class="loader c3"></div>
-            <h1 class="hotel-name-neon">KVS Ruchulu</h1>
+            <h1 class="hotel-name-neon" id="neonHotelName">KVS Ruchulu</h1>
         </div>
         <div class="btn-wrapper" onclick="startApp()"></div>
     </div>
 
     <div id="loginSection">
-        <div class="hotel-title-main">KVS RUCHULU</div>
+        <div class="hotel-title-main" id="hotelNameDisplay" onclick="changeRestaurantName()">KVS RUCHULU</div>
+        <p style="color:#888; font-size:10px; text-align:center; margin-top:-10px; margin-bottom:20px; cursor:pointer;" onclick="changeRestaurantName()">(పేరు మార్చడానికి క్లిక్ చేయండి)</p>
+        
         <div class="main-container">
             <div class="box login-box">
                 <h2>Owner Login</h2>
@@ -155,6 +158,40 @@
     </div>
 
     <script>
+        // ప్రారంభంలో పేరు చెక్ చేయడం
+        window.onload = function() {
+            let savedName = localStorage.getItem('restaurantName');
+            if (!savedName) {
+                document.getElementById('namePromptOverlay').style.display = 'flex';
+            } else {
+                updateUI(savedName);
+            }
+        };
+
+        function saveName() {
+            let name = document.getElementById('userInputName').value;
+            if (name && name.trim() !== "") {
+                localStorage.setItem('restaurantName', name);
+                updateUI(name);
+                document.getElementById('namePromptOverlay').style.display = 'none';
+            } else { alert("దయచేసి పేరు ఎంటర్ చేయండి!"); }
+        }
+
+        function changeRestaurantName() {
+            let currentName = localStorage.getItem('restaurantName') || "KVS RUCHULU";
+            let newName = prompt("మీ కొత్త రెస్టారెంట్ పేరు:", currentName);
+            if (newName && newName.trim() !== "") {
+                localStorage.setItem('restaurantName', newName);
+                updateUI(newName);
+            }
+        }
+
+        function updateUI(name) {
+            document.getElementById('hotelNameDisplay').innerText = name.toUpperCase();
+            document.getElementById('neonHotelName').innerText = name;
+        }
+
+        // స్లైడర్ & మిగతా కోడ్
         const slides = document.querySelectorAll('.slide');
         let currentSlide = 0;
         setInterval(() => {
@@ -196,62 +233,56 @@
             }
         }
 
-       async function handleRegister() {
-    const email = document.getElementById('regUserID').value;
-    const pin = document.getElementById('regPin').value;
-    const name = document.getElementById('regName').value;
-
-    if(!email.includes("@")) { 
-        alert("దయచేసి సరైన Email ID ఇవ్వండి!"); 
-        return; 
-    }
-
-    try {
-        // Firebase లో యూజర్‌ని క్రియేట్ చేయడం
-        const userCredential = await auth.createUserWithEmailAndPassword(email, pin);
-        
-        // Firestore డేటాబేస్‌లో ఓనర్ వివరాలు సేవ్ చేయడం
-        await db.collection("owners").doc(userCredential.user.uid).set({
-            ownerName: name, 
-            email: email, 
-            ownerId: userCredential.user.uid
-        });
-
-        alert("అకౌంట్ సక్సెస్‌ఫుల్ గా క్రియేట్ అయ్యింది!");
-        
-        // ముఖ్యమైన మార్పు: అకౌంట్ క్రియేట్ అయ్యాక నేరుగా ఓనర్ పేజీకి వెళ్లడానికి ఇది ఉపయోగపడుతుంది
-        localStorage.setItem('ownerId', userCredential.user.uid);
-        window.location.href = 'owner.html'; 
-
-    } catch (error) { 
-        alert("రిజిస్ట్రేషన్ సమస్య: " + error.message); 
-    }
-}
+        async function handleRegister() {
+            const email = document.getElementById('regUserID').value;
+            const pin = document.getElementById('regPin').value;
+            const name = document.getElementById('regName').value;
+            if(!email.includes("@")) { alert("దయచేసి సరైన Email ID ఇవ్వండి!"); return; }
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, pin);
+                await db.collection("owners").doc(userCredential.user.uid).set({
+                    ownerName: name, email: email, ownerId: userCredential.user.uid
+                });
+                alert("అకౌంట్ సక్సెస్‌ఫుల్ గా క్రియేట్ అయ్యింది!");
+                localStorage.setItem('ownerId', userCredential.user.uid);
+                window.location.href = 'owner.html'; 
+            } catch (error) { alert("రిజిస్ట్రేషన్ సమస్య: " + error.message); }
+        }
 
         function handleLogin() {
             const email = document.getElementById('loginUser').value;
             const pin = document.getElementById('loginPass').value;
             auth.signInWithEmailAndPassword(email, pin)
                 .then((userCredential) => {
-                    const uid = userCredential.user.uid;
-                    localStorage.setItem('ownerId', uid);
-                    if (navigator.geolocation) {
-                        navigator.geolocation.getCurrentPosition(async (position) => {
-                            await db.collection("owners").doc(uid).set({
-                                hotelLocation: { lat: position.coords.latitude, lng: position.coords.longitude },
-                                lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-                            }, { merge: true });
-                            window.location.href = 'owner.html';
-                        }, () => { window.location.href = 'owner.html'; });
-                    } else { window.location.href = 'owner.html'; }
+                    localStorage.setItem('ownerId', userCredential.user.uid);
+                    window.location.href = 'owner.html';
                 })
                 .catch((error) => alert("లాగిన్ వివరాలు తప్పు: " + error.message));
         }
 
         function handleForget() {
             const email = prompt("మీ రిజిస్టర్డ్ ఇమెయిల్ ఇవ్వండి:");
+
             if(email) auth.sendPasswordResetEmail(email).then(() => alert("లింక్ పంపాము!")).catch((e) => alert(e.message));
-        }
+
+            document.getElementById('loginPass').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                handleLogin();
+            }
+        });
+
+        document.getElementById('loginUser').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                handleLogin();
+            }
+        });
+
+        document.getElementById('regPin').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                handleRegister();
+            }
+        });
+        
     </script>
 </body>
 </html>

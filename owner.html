@@ -47,7 +47,7 @@
 <body>
 
 <div class="header">
-    <div class="hotel-name">KVS RUCHULU - ADMIN</div>
+   <div class="hotel-name" id="displayRestaurantName">KVS RUCHULU - ADMIN</div>
     <div id="customerMenuLinkArea"></div>
     <div class="settings-btn" onclick="window.openSettings()">⚙️</div>
 </div>
@@ -138,9 +138,16 @@
         appId: "1:905673301986:web:aad1477b1098d7cbf66380"
     };
 
+
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
+    function loadRestaurantName() {
+    let savedName = localStorage.getItem('restaurantName');
+    if (savedName) {
+        document.getElementById('displayRestaurantName').innerText = savedName.toUpperCase() + " - ADMIN";
+    }
+}
 
     let currentOwnerId = "";
 
@@ -151,16 +158,16 @@
         return d.toLocaleString('en-IN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true });
     }
 
-    onAuthStateChanged(auth, (user) => {
+  onAuthStateChanged(auth, (user) => {
         if (user) {
             currentOwnerId = user.uid;
+            loadRestaurantName(); // <--- ఇక్కడ యాడ్ చేశాము
             setupLink();
             startListeners();
         } else {
             window.location.href = "login.html";
         }
     });
-
     function setupLink() {
         const url = `https://ramanakarri147-crypto.github.io/kvs-restaurant/index.html?owner=${currentOwnerId}&table=1`;
         document.getElementById('customerMenuLinkArea').innerHTML = `<a href="${url}" target="_blank" class="view-menu-link"><i class="fas fa-external-link-alt"></i> View Customer Menu</a>`;
@@ -186,9 +193,10 @@ onSnapshot(query(collection(db, "orders"), where("ownerId", "==", currentOwnerId
 
         // 1. కొత్త ఆర్డర్ వచ్చినప్పుడు ఒక్కసారి మాత్రమే వాయిస్ అలర్ట్
         snap.docChanges().forEach((change) => {
+            
             // metadata చెక్ చేయడం వల్ల పాత వాటికి రాదు, కొత్తగా వచ్చినప్పుడు ఒక్కసారే వస్తుంది
             if (change.type === "added" && !snap.metadata.hasPendingWrites) {
-                const msg = new SpeechSynthesisUtterance("కొత్త ఆర్డర్ వచ్చింది చూడన్నా");
+                const msg = new SpeechSynthesisUtterance(" ");
                 msg.lang = 'te-IN'; 
                 msg.rate = 1.0; 
                 window.speechSynthesis.speak(msg);
