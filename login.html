@@ -262,27 +262,9 @@
 
         function handleForget() {
             const email = prompt("మీ రిజిస్టర్డ్ ఇమెయిల్ ఇవ్వండి:");
-
             if(email) auth.sendPasswordResetEmail(email).then(() => alert("లింక్ పంపాము!")).catch((e) => alert(e.message));
-
-            document.getElementById('loginPass').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                handleLogin();
-            }
-        });
-
-        document.getElementById('loginUser').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                handleLogin();
-            }
-        });
-
-        document.getElementById('regPin').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                handleRegister();
-            }
-        });
-        
+            
+        }
     </script>
 </body>
 </html>
